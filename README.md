@@ -36,6 +36,25 @@ python scripts/seed/load_gcs_local.py
 pytest tests/seed/test_e2e_local_data.py -v
 ```
 
+## GCP Data Sources
+
+**Prerequisites:** `gcloud auth application-default login`, `.env` populated with `CLOUD_SQL_*` and `GCS_BUCKET`.
+
+```bash
+# Load seed data into GCP
+source .env && unset BIGQUERY_EMULATOR_HOST
+python scripts/seed/load_postgres_gcp.py
+python scripts/seed/load_bigquery_gcp.py
+python scripts/seed/load_gcs_gcp.py
+
+# Run GCP E2E tests
+source .env && unset BIGQUERY_EMULATOR_HOST
+pytest tests/seed/test_e2e_gcp_data.py -v -m gcp
+```
+
+> **Important:** `BIGQUERY_EMULATOR_HOST` in `.env` routes BigQuery calls to the local emulator.
+> Always `unset BIGQUERY_EMULATOR_HOST` before running scripts or tests against real GCP.
+
 ## Project Structure
 
 ```
