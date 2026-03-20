@@ -7,7 +7,8 @@ A proof-of-concept RAG (Retrieval-Augmented Generation) platform built on GCP, d
 - [Project Overview](docs/project/overview.md)
 - [Business Context & Use Cases](docs/project/business-context.md)
 - [Architecture](docs/architecture/architecture.md)
-- [Implementation Plan](docs/project/implementation-plan.md)
+- [Infrastructure](docs/architecture/infrastructure.md)
+- [Implementation Plan](docs/project/implementation/index.md)
 
 ## Local Development
 
@@ -35,6 +36,25 @@ python scripts/seed/load_gcs_local.py
 # 5. Run E2E data tests
 pytest tests/seed/test_e2e_local_data.py -v
 ```
+
+## GCP Data Sources
+
+**Prerequisites:** `gcloud auth application-default login`, `.env` populated with `CLOUD_SQL_*` and `GCS_BUCKET`.
+
+```bash
+# Load seed data into GCP
+source .env && unset BIGQUERY_EMULATOR_HOST
+python scripts/seed/load_postgres_gcp.py
+python scripts/seed/load_bigquery_gcp.py
+python scripts/seed/load_gcs_gcp.py
+
+# Run GCP E2E tests
+source .env && unset BIGQUERY_EMULATOR_HOST
+pytest tests/seed/test_e2e_gcp_data.py -v -m gcp
+```
+
+> **Important:** `BIGQUERY_EMULATOR_HOST` in `.env` routes BigQuery calls to the local emulator.
+> Always `unset BIGQUERY_EMULATOR_HOST` before running scripts or tests against real GCP.
 
 ## Project Structure
 
