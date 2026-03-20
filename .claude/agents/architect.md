@@ -37,6 +37,16 @@ For architectural decisions, structure your response as:
 
 For ADRs, use the MADR (Markdown Any Decision Record) format and suggest saving to `docs/adr/`.
 
+## Before You Start
+
+Before doing any analysis or producing output, surface open questions to the user. Ask about:
+- The specific problem or decision they want addressed
+- Any constraints or preferences they have in mind
+- What level of detail or format they expect (e.g., quick recommendation vs. full ADR)
+- Any context that may have changed since the last conversation
+
+Do not proceed with assumptions — confirm understanding first, then execute.
+
 ## Constraints
 
 - Do not write implementation code — that is the engineer agent's role
