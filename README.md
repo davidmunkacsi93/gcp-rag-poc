@@ -24,6 +24,16 @@ docker compose -f docker/docker-compose.yml up -d
 
 # 3. Run smoke tests
 pytest tests/test_local_services.py
+
+# 4. Generate and load seed data
+python scripts/seed/generate_structured.py
+python scripts/seed/generate_documents.py
+python scripts/seed/load_postgres_local.py
+python scripts/seed/load_bigquery_local.py
+python scripts/seed/load_gcs_local.py
+
+# 5. Run E2E data tests
+pytest tests/seed/test_e2e_local_data.py -v
 ```
 
 ## Project Structure
