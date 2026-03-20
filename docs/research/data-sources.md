@@ -4,6 +4,48 @@ Quick reference covering the three data sources in this architecture: their role
 
 ---
 
+## General Overview
+
+### Google Cloud Storage (GCS)
+
+GCS is Google Cloud's managed object storage service. It stores arbitrary files (objects) in named containers (buckets) and is optimised for high durability, availability, and throughput. It is not a filesystem — there is no hierarchy, only flat key-value storage where keys can contain `/` to simulate folders.
+
+**Best suited for:** large files, blobs, documents, binary assets, data lake storage, staging data between pipeline steps.
+
+**Comparable to:** Amazon S3, Azure Blob Storage, Box (as a document repository).
+
+---
+
+### Snowflake
+
+Snowflake is a cloud-based data warehouse built for analytical workloads. It separates compute from storage, which means query performance scales independently of how much data is stored. It supports standard SQL, semi-structured data (JSON, Avro, Parquet via VARIANT columns), and a multi-cluster architecture designed for concurrent workloads across teams and regions.
+
+In a global enterprise context, Snowflake is often the system of record for regional operational and financial data — P&L, transactions, product metrics — fed by ETL pipelines from source systems.
+
+**Best suited for:** analytical SQL queries, large-scale structured data, cross-regional data sharing, BI workloads.
+
+**Comparable to:** BigQuery, Amazon Redshift, Azure Synapse.
+
+**In this POC:** substituted by Cloud SQL (PostgreSQL) to avoid a Snowflake account and keep everything GCP-native. The connector pattern (NL-to-SQL over a relational interface) is identical.
+
+---
+
+### Box
+
+Box is a cloud content management and file sharing platform used widely in regulated industries (financial services, healthcare, legal) due to its compliance certifications (SOC 2, ISO 27001, FedRAMP, FINRA). It provides a governed document repository with version control, access permissions, metadata tagging, and audit trails.
+
+In an enterprise RAG context, Box is a primary source of unstructured knowledge — internal reports, strategy documents, risk assessments, compliance memos — that are otherwise locked away from search or AI systems.
+
+**Best suited for:** enterprise document management, regulated content storage, collaboration with audit trail requirements.
+
+**Comparable to:** SharePoint, Google Drive, Dropbox Business.
+
+**In this POC:** substituted by a GCS bucket. The ingestion pipeline reads documents from GCS in the same way it would read from Box via the Box API — the only difference is the connector used to pull files.
+
+---
+
+## GCS — In This Architecture
+
 ## Google Cloud Storage (GCS)
 
 ### Role in this architecture
@@ -61,7 +103,7 @@ client = storage.Client(
 
 ---
 
-## BigQuery
+## BigQuery — In This Architecture
 
 ### Role in this architecture
 Global structured data store — holds enterprise-wide KPIs and product line performance metrics. Queried at runtime by the Structured Retriever via NL-to-SQL.
@@ -123,7 +165,7 @@ client = bigquery.Client(
 
 ---
 
-## Cloud SQL / PostgreSQL (Snowflake substitute)
+## Cloud SQL / PostgreSQL — In This Architecture (Snowflake substitute)
 
 ### Role in this architecture
 Regional structured data store — holds regional P&L, product-level metrics, and country-level breakdowns. Substitutes for Snowflake in the POC. Queried at runtime by the Structured Retriever via NL-to-SQL.
