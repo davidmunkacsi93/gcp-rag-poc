@@ -17,12 +17,13 @@ from google.cloud import bigquery, storage
 
 
 @pytest.fixture(scope="module", autouse=True)
-def unset_bigquery_emulator():
-    """Ensure BigQuery calls go to GCP, not the local emulator."""
-    original = os.environ.pop("BIGQUERY_EMULATOR_HOST", None)
+def unset_emulator_vars():
+    """Ensure all GCP client calls go to real GCP, not local emulators."""
+    saved = {k: os.environ.pop(k, None) for k in ("BIGQUERY_EMULATOR_HOST", "STORAGE_EMULATOR_HOST")}
     yield
-    if original:
-        os.environ["BIGQUERY_EMULATOR_HOST"] = original
+    for k, v in saved.items():
+        if v is not None:
+            os.environ[k] = v
 
 
 @pytest.fixture(scope="module")
