@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>architecture.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="architecture">Architecture</h1>
+<h2 id="c4-model">C4 Model</h2>
+<h3 id="l1--system-context">L1 — System Context</h3>
+<pre><code class="language-mermaid"><div class="mermaid">C4Context
+  title System Context — GCP RAG Platform
+
+  Person(analyst, "Enterprise Analyst")
+  Person(dealteam, "Deal Team / Risk Officer")
+
+  System(rag, "GCP RAG Platform")
+
+  System_Ext(box, "Box")
+  System_Ext(snowflake, "Snowflake")
+  System_Ext(bigquery_ext, "BigQuery (Global)")
+
+  Rel(analyst, rag, "Asks business questions", "HTTPS / Chat UI")
+  Rel(dealteam, rag, "Initiates DD workflows", "HTTPS / Chat UI")
+  Rel(rag, box, "Ingests documents from", "Box API")
+  Rel(rag, snowflake, "Queries structured data from", "JDBC / Snowflake connector")
+  Rel(rag, bigquery_ext, "Queries global metrics from", "BigQuery API")
+</div></code></pre>
+<h4 id="components">Components</h4>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Enterprise Analyst</td>
+<td>User</td>
+<td>Regional finance analyst querying across business metrics and internal documents</td>
+</tr>
+<tr>
+<td>Deal Team / Risk Officer</td>
+<td>User</td>
+<td>Initiates multi-step due diligence workflows requiring cross-source synthesis</td>
+</tr>
+<tr>
+<td>GCP RAG Platform</td>
+<td>System</td>
+<td>The platform under design — routes NL queries to the appropriate retrieval paths and returns grounded, cited answers</td>
+</tr>
+<tr>
+<td>Box</td>
+<td>External System</td>
+<td>Enterprise document repository holding internal reports, strategy documents, and guidance</td>
+</tr>
+<tr>
+<td>Snowflake</td>
+<td>External System</td>
+<td>Regional operational data store — P&amp;L, product-level metrics, regional KPIs</td>
+</tr>
+<tr>
+<td>BigQuery (Global)</td>
+<td>External System</td>
+<td>Global data warehouse owned by HQ — enterprise-wide metrics and reference data</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h3 id="l2--containers">L2 — Containers</h3>
+<pre><code class="language-mermaid"><div class="mermaid">C4Container
+  title Container Diagram — GCP RAG Platform
+
+  Person(user, "Analyst / Deal Team")
+
+  System_Boundary(rag, "GCP RAG Platform") {
+    Container(ui, "Chat Interface", "Web App / Cloud Run")
+    Container(api, "RAG API", "Python / Cloud Run")
+    Container(ingestion, "Ingestion Service", "Python / Cloud Run")
+    ContainerDb(vectorstore, "Vector Store", "Vertex AI Vector Search")
+    ContainerDb(docstore, "Document Store", "GCS")
+    ContainerDb(metastore, "Metadata Store", "Firestore")
+    Container(llm, "Generation Service", "Vertex AI / Gemini")
+  }
+
+  System_Ext(box, "Box")
+  System_Ext(snowflake, "Snowflake")
+  System_Ext(bq, "BigQuery (Global)")
+
+  Rel(user, ui, "Interacts with", "HTTPS")
+  Rel(ui, api, "Sends queries to", "REST")
+  Rel(api, vectorstore, "Semantic retrieval", "gRPC")
+  Rel(api, bq, "Structured query (NL-to-SQL)", "BigQuery API")
+  Rel(api, snowflake, "Structured query (NL-to-SQL)", "JDBC")
+  Rel(api, llm, "Sends assembled context", "Vertex AI API")
+  Rel(api, metastore, "Reads source lineage", "Firestore API")
+  Rel(ingestion, box, "Pulls documents from", "Box API")
+  Rel(ingestion, docstore, "Stores chunks in", "GCS API")
+  Rel(ingestion, vectorstore, "Writes embeddings to", "gRPC")
+  Rel(ingestion, metastore, "Writes metadata to", "Firestore API")
+</div></code></pre>
+<blockquote>
+<p><strong>Note:</strong> The direct connections from the RAG API to Snowflake and BigQuery reflect the internal Structured Retriever component's responsibility, not a direct dependency of the API container itself. See L3 for the accurate component-level view.</p>
+</blockquote>
+<h4 id="containers">Containers</h4>
+<table>
+<thead>
+<tr>
+<th>Container</th>
+<th>Technology</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chat Interface</td>
+<td>Web App / Cloud Run</td>
+<td>User-facing interface for natural-language query entry and response display. Stateless; delegates all logic to the RAG API.</td>
+</tr>
+<tr>
+<td>RAG API</td>
+<td>Python / Cloud Run</td>
+<td>Central orchestrator. Receives queries, activates the appropriate retrieval paths, assembles context, and drives generation.</td>
+</tr>
+<tr>
+<td>Ingestion Service</td>
+<td>Python / Cloud Run</td>
+<td>Offline pipeline that pulls documents from Box, chunks and preprocesses them, generates embeddings, and writes to platform storage. Runs on schedule or event trigger.</td>
+</tr>
+<tr>
+<td>Vector Store</td>
+<td>Vertex AI Vector Search</td>
+<td>Stores dense vector embeddings of document chunks. Queried by the Semantic Retriever for nearest-neighbour search.</td>
+</tr>
+<tr>
+<td>Document Store</td>
+<td>GCS</td>
+<td>Persistent storage for raw and chunked documents post-ingestion. Source of truth for document content.</td>
+</tr>
+<tr>
+<td>Metadata Store</td>
+<td>Firestore</td>
+<td>Stores document metadata, ingestion state, and chunk-to-source lineage records used for citation resolution.</td>
+</tr>
+<tr>
+<td>Generation Service</td>
+<td>Vertex AI / Gemini</td>
+<td>Receives an assembled prompt with retrieved context and produces the final grounded answer.</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h3 id="l3--rag-api-component">L3 — RAG API (Component)</h3>
+<pre><code class="language-mermaid"><div class="mermaid">C4Component
+  title Component Diagram — RAG API
+
+  Container_Boundary(api, "RAG API") {
+    Component(router, "Query Router")
+    Component(retriever_semantic, "Semantic Retriever")
+    Component(retriever_structured, "Structured Retriever")
+    Component(fusion, "Context Fusion")
+    Component(prompt_builder, "Prompt Builder")
+    Component(agent_planner, "Agent Planner")
+  }
+
+  ContainerDb(vectorstore, "Vector Store", "Vertex AI Vector Search")
+  ContainerDb(metastore, "Metadata Store", "Firestore")
+  System_Ext(bq, "BigQuery")
+  System_Ext(snowflake, "Snowflake")
+  Container(llm, "Generation Service", "Gemini")
+
+  Rel(router, retriever_semantic, "Activates")
+  Rel(router, retriever_structured, "Activates")
+  Rel(router, agent_planner, "Activates for agentic queries")
+  Rel(retriever_semantic, vectorstore, "Queries")
+  Rel(retriever_semantic, metastore, "Resolves source lineage")
+  Rel(retriever_structured, bq, "Queries")
+  Rel(retriever_structured, snowflake, "Queries")
+  Rel(fusion, prompt_builder, "Passes ranked context to")
+  Rel(prompt_builder, llm, "Sends prompt to")
+  Rel(agent_planner, retriever_semantic, "Calls iteratively")
+  Rel(agent_planner, retriever_structured, "Calls iteratively")
+  Rel(agent_planner, prompt_builder, "Passes final context to")
+</div></code></pre>
+<h4 id="components">Components</h4>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Query Router</td>
+<td>Classifies the incoming query and determines which retrieval paths to activate — semantic, structured, or both. For agentic queries (UC-02), hands off to the Agent Planner.</td>
+</tr>
+<tr>
+<td>Semantic Retriever</td>
+<td>Performs nearest-neighbour search against the Vector Store to find relevant document chunks. Resolves chunk-to-source lineage via the Metadata Store for citation.</td>
+</tr>
+<tr>
+<td>Structured Retriever</td>
+<td>Translates the natural-language query into SQL and executes it against BigQuery or Snowflake. Owns all connections to structured external sources.</td>
+</tr>
+<tr>
+<td>Context Fusion</td>
+<td>Merges results from all active retrieval paths, de-duplicates, and re-ranks by relevance before passing to the Prompt Builder.</td>
+</tr>
+<tr>
+<td>Prompt Builder</td>
+<td>Assembles the final prompt: system instructions, retrieved context with citations, and the original query. Controls context window budget.</td>
+</tr>
+<tr>
+<td>Agent Planner</td>
+<td>Implements the agentic loop for multi-step workflows (UC-02). Plans a sequence of retrieval and reasoning steps, executes them iteratively, and hands the final assembled context to the Prompt Builder.</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="data-architecture">Data Architecture</h2>
+<h3 id="data-sources--ownership">Data Sources &amp; Ownership</h3>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Type</th>
+<th>Owner</th>
+<th>Content</th>
+<th>Access Pattern</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Box</td>
+<td>Unstructured</td>
+<td>Business / local entity</td>
+<td>Internal reports, strategy docs, risk assessments, guidance</td>
+<td>Pull via Box API on schedule or event</td>
+</tr>
+<tr>
+<td>Snowflake</td>
+<td>Structured</td>
+<td>Regional finance / ops</td>
+<td>P&amp;L, product-level metrics, regional KPIs</td>
+<td>NL-to-SQL query at runtime</td>
+</tr>
+<tr>
+<td>BigQuery (Global)</td>
+<td>Structured</td>
+<td>Global HQ / data platform</td>
+<td>Enterprise-wide metrics, KPIs, reference data</td>
+<td>NL-to-SQL query at runtime</td>
+</tr>
+<tr>
+<td>GCS (Document Store)</td>
+<td>Unstructured</td>
+<td>RAG Platform</td>
+<td>Chunked and raw documents post-ingestion</td>
+<td>Internal — read by retrieval layer</td>
+</tr>
+<tr>
+<td>Vertex AI Vector Search</td>
+<td>Vector</td>
+<td>RAG Platform</td>
+<td>Embeddings of document chunks</td>
+<td>Internal — semantic retrieval</td>
+</tr>
+<tr>
+<td>Firestore</td>
+<td>Semi-structured</td>
+<td>RAG Platform</td>
+<td>Document metadata, chunk-to-source lineage, ingestion state</td>
+<td>Internal — lineage and citation resolution</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h3 id="data-flow">Data Flow</h3>
+<pre><code class="language-mermaid"><div class="mermaid">flowchart LR
+  subgraph Sources["External Sources"]
+    BOX[Box]
+    SF[Snowflake]
+    BQ[BigQuery]
+  end
+
+  subgraph Ingestion["Ingestion Pipeline"]
+    PULL[Pull & Parse]
+    CHUNK[Chunk & Preprocess]
+    EMBED[Embed]
+  end
+
+  subgraph Storage["Platform Storage"]
+    GCS[(GCS\nDocument Store)]
+    VS[(Vector Store)]
+    FS[(Firestore\nMetadata)]
+  end
+
+  subgraph Query["Query Path"]
+    ROUTER[Query Router]
+    SEM[Semantic Retriever]
+    STR[Structured Retriever]
+    FUSION[Context Fusion]
+    GEN[Gemini Generation]
+  end
+
+  BOX -->|Box API| PULL
+  PULL --> CHUNK
+  CHUNK -->|raw chunks| GCS
+  PULL -->|metadata| FS
+  GCS -->|chunks| EMBED
+  EMBED -->|embeddings + chunk text| VS
+
+  ROUTER --> SEM --> VS
+  SEM --> FS
+  ROUTER --> STR
+  STR -->|NL-to-SQL| BQ
+  STR -->|NL-to-SQL| SF
+  SEM & STR --> FUSION --> GEN
+</div></code></pre>
+<hr>
+<h3 id="data-governance-principles">Data Governance Principles</h3>
+<ul>
+<li><strong>Lineage</strong> — every answer chunk is traceable to a source document or query via Firestore metadata</li>
+<li><strong>No data duplication at rest</strong> — structured sources (Snowflake, BigQuery) are queried live; only documents are ingested and stored</li>
+<li><strong>Access control</strong> — service accounts follow least-privilege; Box and Snowflake credentials are stored in Secret Manager</li>
+<li><strong>Data residency</strong> — all GCP-managed storage (GCS, Firestore, Vector Search) is provisioned in a single agreed region</li>
+<li><strong>Retention</strong> — ingested document chunks inherit the retention policy of the source; metadata is retained for the lifetime of the POC</li>
+</ul>
+
+</body>
+</html>
