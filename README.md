@@ -7,6 +7,7 @@ A proof-of-concept RAG (Retrieval-Augmented Generation) platform built on GCP, d
 - [Project Overview](docs/project/overview.md)
 - [Business Context & Use Cases](docs/project/business-context.md)
 - [Architecture](docs/architecture/architecture.md)
+- [Infrastructure](docs/architecture/infrastructure.md)
 - [Implementation Plan](docs/project/implementation/index.md)
 
 ## Local Development
