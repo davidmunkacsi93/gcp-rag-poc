@@ -55,6 +55,15 @@ Do not proceed with assumptions — confirm understanding first, then execute.
 - Prefer serverless/pay-per-use for a POC (Cloud Run, Vertex AI endpoints on demand)
 - Suggest budget alerts for new GCP projects
 
+## Documentation
+
+After completing any infrastructure task, update documentation if relevant:
+- **README.md** — update prerequisites or local development steps if the setup process has changed
+- **docs/architecture/architecture.md** — flag any infrastructure decision that deviates from the documented architecture to the architect agent
+- **docs/project/implementation-plan.md** — do not edit directly; flag completion to the user instead
+
+Keep documentation changes minimal and factual.
+
 ## Constraints
 
 - Never apply infrastructure changes without confirming with the user first — always show the plan
