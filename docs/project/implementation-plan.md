@@ -46,7 +46,7 @@ Create a GCS bucket `rag-poc-documents-dev` in Terraform. Define folder structur
 Create dataset `global_metrics` in Terraform. Define and load `product_performance` and `quarterly_pnl` tables from seed CSVs.
 
 **C3 — Provision Cloud SQL (Snowflake substitute)**
-Create a Cloud SQL PostgreSQL instance `rag-poc-regional-dev` in Terraform. Create schema `regional` with tables `product_metrics` and `regional_pnl`. Load from seed CSVs.
+Create a Cloud SQL PostgreSQL instance `rag-poc-regional-dev` in Terraform. Create schema `regional` with table `regional_metrics`. Load from seed CSVs.
 
 **C4 — IAM & secrets**
 Create a service account `rag-poc-ingestion@...` with least-privilege roles for GCS, BigQuery, and Cloud SQL. Store Cloud SQL credentials in Secret Manager.
