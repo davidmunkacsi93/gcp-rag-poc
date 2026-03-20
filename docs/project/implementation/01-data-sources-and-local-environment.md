@@ -1,6 +1,4 @@
-# Implementation Plan
-
-## Phase 1 — Data Sources & Local Environment
+# Phase 01 — Data Sources & Local Environment
 
 Goal: all three data sources exist in GCP and locally, populated with realistic synthetic financial services data.
 
@@ -31,7 +29,7 @@ Write `scripts/seed/generate_documents.py` to produce 10–15 realistic syntheti
 - Risk assessment reports (including one for "Project Apollo")
 - Remediation guidance by product line
 
-Output: Markdown or plain-text files under `data/seed/documents/`.
+Output: Markdown files under `data/seed/documents/`.
 
 ---
 
@@ -43,10 +41,10 @@ Output: Markdown or plain-text files under `data/seed/documents/`.
 Create a GCS bucket `rag-poc-documents-dev` in Terraform. Define folder structure: `/raw`, `/ingested`. Upload seed documents from `data/seed/documents/`.
 
 **C2 — Provision BigQuery dataset**
-Create dataset `global_metrics` in Terraform. Define and load `product_performance` and `quarterly_pnl` tables from seed CSVs.
+Create dataset `global_metrics` in Terraform. Define and load `global_metrics` table from seed CSV.
 
 **C3 — Provision Cloud SQL (Snowflake substitute)**
-Create a Cloud SQL PostgreSQL instance `rag-poc-regional-dev` in Terraform. Create schema `regional` with table `regional_metrics`. Load from seed CSVs.
+Create a Cloud SQL PostgreSQL instance `rag-poc-regional-dev` in Terraform. Create schema `regional` with table `regional_metrics`. Load from seed CSV.
 
 **C4 — IAM & secrets**
 Create a service account `rag-poc-ingestion@...` with least-privilege roles for GCS, BigQuery, and Cloud SQL. Store Cloud SQL credentials in Secret Manager.
@@ -71,7 +69,7 @@ Write `scripts/seed/load_gcs_local.py` to upload seed documents to the local GCS
 ### Completion Criteria
 
 - [ ] `docker compose up` starts all three local services cleanly
-- [ ] `scripts/check_local.py` passes against local environment
+- [ ] Smoke tests pass against local environment
 - [ ] All three GCP resources provisioned via Terraform and queryable
 - [ ] Seed data present in all six data sources (3 local, 3 GCP)
 - [ ] Service account and secrets configured in GCP
