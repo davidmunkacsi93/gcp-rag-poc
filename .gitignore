@@ -35,6 +35,9 @@ htmlcov/
 service-account*.json
 application_default_credentials.json
 
+# Generated seed data
+data/seed/
+
 # IDE
 .idea/
 .vscode/
