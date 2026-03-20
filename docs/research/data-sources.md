@@ -16,6 +16,18 @@ GCS is Google Cloud's managed object storage service. It stores arbitrary files 
 
 ---
 
+### BigQuery
+
+BigQuery is Google Cloud's fully managed, serverless data warehouse designed for large-scale analytical SQL workloads. It separates storage from compute, charges per query (by bytes scanned), and requires no infrastructure management. It supports standard SQL, nested/repeated fields, and integrates natively with the rest of the GCP ecosystem (Vertex AI, Looker, Dataflow, etc.).
+
+In an enterprise context, BigQuery is typically used as the global data platform — a central store for enterprise-wide metrics, aggregated KPIs, and reference data fed by pipelines from operational systems across the organisation.
+
+**Best suited for:** ad-hoc analytical queries, large datasets, enterprise reporting, ML feature stores, NL-to-SQL interfaces.
+
+**Comparable to:** Snowflake, Amazon Redshift, Azure Synapse.
+
+---
+
 ### Snowflake
 
 Snowflake is a cloud-based data warehouse built for analytical workloads. It separates compute from storage, which means query performance scales independently of how much data is stored. It supports standard SQL, semi-structured data (JSON, Avro, Parquet via VARIANT columns), and a multi-cluster architecture designed for concurrent workloads across teams and regions.
