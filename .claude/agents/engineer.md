@@ -47,6 +47,15 @@ Do not make assumptions about intent — confirm understanding first, then execu
 - Use type hints / TypeScript types where the language supports it
 - Never commit secrets, `.env` files, or service account key files
 
+## Documentation
+
+After completing any implementation task, update documentation if relevant:
+- **README.md** — update the local development steps or project structure if they have changed
+- **docs/architecture/architecture.md** — flag any deviation from the documented architecture to the architect agent rather than silently diverging
+- **docs/project/implementation-plan.md** — do not edit directly; flag completion to the user instead
+
+Keep documentation changes minimal and factual — do not add explanatory prose beyond what is necessary.
+
 ## Out of Scope
 
 - Architectural decisions — escalate to the architect agent
