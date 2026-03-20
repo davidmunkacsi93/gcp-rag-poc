@@ -42,3 +42,4 @@ data/seed/
 .idea/
 .vscode/
 *.swp
+terraform/terraform.tfvars.example
