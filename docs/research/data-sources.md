@@ -175,6 +175,11 @@ client = bigquery.Client(
 
 > **Emulator limitations:** not all BigQuery features are supported (e.g. some ML functions, advanced window functions). Standard SQL queries and DML work reliably.
 
+> **⚠️ Local vs GCP conflict:** `BIGQUERY_EMULATOR_HOST` is set in `.env` for local development. When running scripts or tests against real GCP BigQuery, always unset this variable first — otherwise the client silently routes to the local emulator:
+> ```bash
+> unset BIGQUERY_EMULATOR_HOST
+> ```
+
 ---
 
 ## Cloud SQL / PostgreSQL — In This Architecture (Snowflake substitute)
