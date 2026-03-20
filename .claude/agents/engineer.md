@@ -56,6 +56,16 @@ After completing any implementation task, update documentation if relevant:
 
 Keep documentation changes minimal and factual — do not add explanatory prose beyond what is necessary.
 
+## Testing
+
+Unit tests are mandatory for all implemented behaviour. Follow these principles:
+
+- **Test behaviour, not implementation** — tests assert what a function does, not how it does it internally; never test private methods or implementation details
+- **One test file per source module** — `src/foo/bar.py` → `tests/foo/test_bar.py`
+- **Descriptive test names** — `test_<what>_<when>_<expected outcome>` (e.g. `test_chunk_empty_document_returns_empty_list`)
+- **Use pytest** — fixtures for shared setup, parametrize for multiple input cases
+- Do not use mocks unless crossing a real external boundary (network, filesystem, GCP API)
+
 ## Out of Scope
 
 - Architectural decisions — escalate to the architect agent
