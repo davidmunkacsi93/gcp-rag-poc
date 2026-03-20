@@ -1,7 +1,7 @@
 """Smoke tests — verify all local Docker services are reachable."""
 
 import os
-import psycopg2
+import psycopg
 import pytest
 from google.api_core.client_options import ClientOptions
 from google.auth.credentials import AnonymousCredentials
@@ -9,7 +9,7 @@ from google.cloud import bigquery, storage
 
 
 def test_postgres_reachable():
-    conn = psycopg2.connect(
+    conn = psycopg.connect(
         host=os.environ["POSTGRES_HOST"],
         port=int(os.environ["POSTGRES_PORT"]),
         user=os.environ["POSTGRES_USER"],
