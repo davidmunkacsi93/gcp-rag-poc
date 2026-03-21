@@ -17,8 +17,9 @@ All GCP infrastructure is managed via Terraform, with local state. Resources are
 
 ```mermaid
 graph TD
-    subgraph GCP["GCP Project: your-gcp-project-id | europe-west1"]
-        SA[Service Account: rag-poc-ingestion]
+    subgraph GCP["GCP Project: gcp-rag-poc-490814 | europe-west1"]
+        SA_I[Service Account: rag-poc-ingestion]
+        SA_R[Service Account: rag-poc-retrieval]
         GCS[GCS Bucket: documents-dev]
         BQ[BigQuery: global_metrics]
         SQL[Cloud SQL: rag-poc-regional-dev]
@@ -27,12 +28,19 @@ graph TD
         VS[Vertex AI Vector Search]
     end
 
-    SA -->|storage.objectAdmin| GCS
-    SA -->|dataEditor + jobUser| BQ
-    SA -->|cloudsql.client| SQL
-    SA -->|secretAccessor| SM
-    SA -->|datastore.user| FS
-    SA -->|aiplatform.user| VS
+    SA_I -->|storage.objectAdmin| GCS
+    SA_I -->|dataEditor + jobUser| BQ
+    SA_I -->|cloudsql.client| SQL
+    SA_I -->|secretAccessor| SM
+    SA_I -->|datastore.user| FS
+    SA_I -->|aiplatform.user| VS
+
+    SA_R -->|dataViewer + jobUser| BQ
+    SA_R -->|cloudsql.client| SQL
+    SA_R -->|secretAccessor| SM
+    SA_R -->|datastore.user| FS
+    SA_R -->|aiplatform.user| VS
+
     SM -.->|db password| SQL
 ```
 
@@ -123,21 +131,30 @@ Stores dense vector embeddings of document chunks. Queried by the Semantic Retri
 
 ---
 
-### Service Account & IAM
+### Service Accounts & IAM
 
-| Property | Value |
-|---|---|
-| Service account | `rag-poc-ingestion@your-gcp-project-id.iam.gserviceaccount.com` |
+**Ingestion service account** — `rag-poc-ingestion@gcp-rag-poc-490814.iam.gserviceaccount.com`
 
 | Role | Scope | Purpose |
 |---|---|---|
 | `roles/storage.objectAdmin` | Project | Read/write GCS bucket |
 | `roles/bigquery.dataEditor` | Project | Read/write BigQuery tables |
 | `roles/bigquery.jobUser` | Project | Execute BigQuery jobs |
-| `roles/cloudsql.client` | Project | Connect to Cloud SQL via Auth Proxy |
+| `roles/cloudsql.client` | Project | Connect to Cloud SQL |
 | `roles/secretmanager.secretAccessor` | `rag-poc-db-password` | Read DB password from Secret Manager |
 | `roles/datastore.user` | Project | Read/write Firestore metadata and chunk records |
-| `roles/aiplatform.user` | Project | Upsert embeddings to and query Vector Search |
+| `roles/aiplatform.user` | Project | Upsert embeddings to Vector Search |
+
+**Retrieval service account** — `rag-poc-retrieval@gcp-rag-poc-490814.iam.gserviceaccount.com`
+
+| Role | Scope | Purpose |
+|---|---|---|
+| `roles/bigquery.dataViewer` | Project | Read BigQuery tables (read-only, unlike ingestion) |
+| `roles/bigquery.jobUser` | Project | Execute BigQuery query jobs |
+| `roles/cloudsql.client` | Project | Connect to Cloud SQL |
+| `roles/secretmanager.secretAccessor` | `rag-poc-db-password` | Read DB password from Secret Manager |
+| `roles/datastore.user` | Project | Read Firestore chunk and document records for citation |
+| `roles/aiplatform.user` | Project | Query Vector Search index endpoint |
 
 ---
 
@@ -182,10 +199,18 @@ terraform destroy
 
 | Component | Local | GCP |
 |---|---|---|
-| Document store | `fake-gcs-server` on port `4443` | GCS bucket `your-gcs-bucket-name` |
+| Document store | `fake-gcs-server` on port `4443` | GCS bucket `gcp-rag-poc-490814-documents-dev` |
 | Global metrics | `bigquery-emulator` on port `9050` | BigQuery `global_metrics.global_metrics` |
-| Regional metrics | `postgres:16` on port `5432` | Cloud SQL `rag-poc-regional-dev` at `your-cloud-sql-public-ip` |
+| Regional metrics | `postgres:16` on port `5432` | Cloud SQL `rag-poc-regional-dev` at `34.76.9.33` |
 | Metadata store | Firestore emulator on port `8090` | Firestore `(default)` database |
-| Vector store | `MockVectorStore` (no-op, in-process) | Vertex AI Vector Search `rag_poc_index_v1` |
+| Vector store (ingestion) | `MockVectorStore` (no-op, records upserted in-process) | Vertex AI Vector Search index `2188824185692749824` |
+| Vector store (retrieval) | `StubVectorSearchClient` (in-memory dot-product search) | Vertex AI Vector Search endpoint `8356046478539489280` |
+| Embedding model | `StubEmbedder` (deterministic SHA256 vectors) | Vertex AI `text-embedding-004` |
+| NL-to-SQL model | Not used in local tests (mocked) | Gemini `gemini-2.0-flash` (`GEMINI_MODEL`) |
 
-When switching between local and GCP, remember to `unset BIGQUERY_EMULATOR_HOST` — see [data-sources.md](../research/data-sources.md).
+Switch between environments by sourcing the appropriate env file:
+
+```bash
+source .env.local   # local Docker emulators
+source .env.gcp     # real GCP services
+```

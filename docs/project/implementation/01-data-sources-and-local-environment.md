@@ -68,8 +68,8 @@ Write `scripts/seed/load_gcs_local.py` to upload seed documents to the local GCS
 
 ### Completion Criteria
 
-- [ ] `docker compose up` starts all three local services cleanly
-- [ ] Smoke tests pass against local environment
-- [ ] All three GCP resources provisioned via Terraform and queryable
-- [ ] Seed data present in all six data sources (3 local, 3 GCP)
-- [ ] Service account and secrets configured in GCP
+- [x] `docker compose up` starts all three local services cleanly
+- [x] Smoke tests pass against local environment
+- [x] All three GCP resources provisioned via Terraform and queryable
+- [x] Seed data present in all six data sources (3 local, 3 GCP)
+- [x] Service account and secrets configured in GCP

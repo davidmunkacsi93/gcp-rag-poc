@@ -125,14 +125,14 @@ C4Component
 
 #### Components
 
-| Component | Description |
-|---|---|
-| Query Router | Classifies the incoming query and determines which retrieval paths to activate — semantic, structured, or both. For agentic queries (UC-02), hands off to the Agent Planner. |
-| Semantic Retriever | Performs nearest-neighbour search against the Vector Store to find relevant document chunks. Resolves chunk-to-source lineage via the Metadata Store for citation. |
-| Structured Retriever | Translates the natural-language query into SQL and executes it against BigQuery or Cloud SQL. Owns all connections to structured external sources. |
-| Context Fusion | Merges results from all active retrieval paths, de-duplicates, and re-ranks by relevance before passing to the Prompt Builder. |
-| Prompt Builder | Assembles the final prompt: system instructions, retrieved context with citations, and the original query. Controls context window budget. |
-| Agent Planner | Implements the agentic loop for multi-step workflows (UC-02). Plans a sequence of retrieval and reasoning steps, executes them iteratively, and hands the final assembled context to the Prompt Builder. |
+| Component | Implementation | Description |
+|---|---|---|
+| Query Router | `src/retrieval/router.py` | Rule-based keyword classifier — activates semantic, structured, or both paths based on frozen keyword sets. Ambiguous queries activate all paths by default. No LLM call; see [ADR-002](../adr/002-rule-based-query-router.md). |
+| Semantic Retriever | `src/retrieval/semantic.py` | Embeds the query via Vertex AI `text-embedding-004`, calls `find_neighbors` on the Vector Search endpoint (top-K, optional `doc_type` filter), and resolves chunk text and `source_key` from Firestore for citation. |
+| Structured Retriever | `src/retrieval/structured.py` | Generates SQL from the natural-language query using Gemini (`gemini-2.0-flash`) and executes it against BigQuery and/or Cloud SQL. A SELECT-only safety guard rejects any DML or DDL before execution. See [ADR-001](../adr/001-nl-to-sql-gemini.md). |
+| Context Fusion | `src/retrieval/fusion.py` | Merges results from all active paths. De-duplicates semantic chunks by `chunk_id` (highest score wins). Structured results receive a fixed score of 1.0. Sorts descending and truncates to `max_context_items` (default 8). |
+| Prompt Builder | Phase 04 | Assembles the final prompt: system instructions, retrieved context with citations, and the original query. Controls context window budget. |
+| Agent Planner | Phase 06 | Implements the agentic loop for multi-step workflows (UC-02). Plans a sequence of retrieval and reasoning steps, executes them iteratively, and hands the final assembled context to the Prompt Builder. |
 
 ---
 
