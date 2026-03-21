@@ -1,6 +1,9 @@
+import logging
 import os
 import re
 from dataclasses import dataclass
+
+logger = logging.getLogger(__name__)
 
 import psycopg
 import vertexai
@@ -90,7 +93,9 @@ def query_bigquery(nl_query: str) -> StructuredResult:
     try:
         schema = _BIGQUERY_SCHEMA.format(project_id=os.environ["GCP_PROJECT_ID"])
         sql = _generate_sql(schema, nl_query)
+        logger.debug("BigQuery generated SQL: %s", sql)
         if not _is_safe_sql(sql):
+            logger.warning("BigQuery rejected unsafe SQL: %s", sql)
             return StructuredResult(
                 source="bigquery", columns=[], rows=[], generated_sql=sql,
                 error=f"Rejected unsafe SQL: {sql}",
@@ -99,8 +104,10 @@ def query_bigquery(nl_query: str) -> StructuredResult:
         result = client.query(sql).result()
         columns = [f.name for f in result.schema]
         rows = [tuple(row) for row in result][:_MAX_ROWS]
+        logger.debug("BigQuery returned %d rows", len(rows))
         return StructuredResult(source="bigquery", columns=columns, rows=rows, generated_sql=sql)
     except Exception as e:
+        logger.error("BigQuery query failed. SQL: %s — Error: %s", sql, e)
         return StructuredResult(
             source="bigquery", columns=[], rows=[], generated_sql=sql, error=str(e)
         )
@@ -110,7 +117,9 @@ def query_cloudsql(nl_query: str) -> StructuredResult:
     sql = ""
     try:
         sql = _generate_sql(_CLOUDSQL_SCHEMA, nl_query)
+        logger.debug("Cloud SQL generated SQL: %s", sql)
         if not _is_safe_sql(sql):
+            logger.warning("Cloud SQL rejected unsafe SQL: %s", sql)
             return StructuredResult(
                 source="cloudsql", columns=[], rows=[], generated_sql=sql,
                 error=f"Rejected unsafe SQL: {sql}",
@@ -119,8 +128,10 @@ def query_cloudsql(nl_query: str) -> StructuredResult:
             cur.execute(sql)
             columns = [desc[0] for desc in cur.description]
             rows = cur.fetchmany(_MAX_ROWS)
+        logger.debug("Cloud SQL returned %d rows", len(rows))
         return StructuredResult(source="cloudsql", columns=columns, rows=rows, generated_sql=sql)
     except Exception as e:
+        logger.error("Cloud SQL query failed. SQL: %s — Error: %s", sql, e)
         return StructuredResult(
             source="cloudsql", columns=[], rows=[], generated_sql=sql, error=str(e)
         )

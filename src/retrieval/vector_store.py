@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass
 
 from google.cloud import aiplatform
+from google.cloud.aiplatform.matching_engine.matching_engine_index_endpoint import Namespace
 
 
 @dataclass
@@ -27,8 +28,8 @@ class VectorSearchClient:
         top_k: int = 5,
         doc_type_filter: str | None = None,
     ) -> list[Neighbor]:
-        restricts = (
-            [{"namespace": "doc_type", "allow_list": [doc_type_filter]}]
+        filter = (
+            [Namespace(name="doc_type", allow_tokens=[doc_type_filter])]
             if doc_type_filter
             else None
         )
@@ -36,7 +37,7 @@ class VectorSearchClient:
             deployed_index_id=self._deployed_index_id,
             queries=[query_embedding],
             num_neighbors=top_k,
-            restricts=restricts,
+            filter=filter,
         )
         neighbors = response[0] if response else []
         return [Neighbor(id=n.id, distance=n.distance) for n in neighbors]
