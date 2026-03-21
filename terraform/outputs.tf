@@ -18,6 +18,10 @@ output "ingestion_service_account" {
   value = google_service_account.ingestion.email
 }
 
+output "vector_search_index_id" {
+  value = google_vertex_ai_index.rag_poc.id
+}
+
 output "vector_search_endpoint_id" {
   value = google_vertex_ai_index_endpoint.rag_poc.id
 }

@@ -11,6 +11,7 @@ class IngestionConfig:
     chunk_overlap: int
     embedding_model: str
     vertex_location: str
+    index_id: str
     index_endpoint: str
     deployed_index_id: str
 
@@ -24,6 +25,7 @@ class IngestionConfig:
             chunk_overlap=int(os.getenv("CHUNK_OVERLAP", "50")),
             embedding_model=os.getenv("EMBEDDING_MODEL", "stub"),
             vertex_location=os.getenv("VERTEX_AI_LOCATION", "europe-west1"),
+            index_id=os.getenv("VERTEX_AI_INDEX_ID", ""),
             index_endpoint=os.getenv("VERTEX_AI_INDEX_ENDPOINT", ""),
             deployed_index_id=os.getenv("VERTEX_AI_DEPLOYED_INDEX_ID", ""),
         )
