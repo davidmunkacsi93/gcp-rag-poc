@@ -194,3 +194,46 @@ resource "google_project_iam_member" "ingestion_aiplatform" {
   role    = "roles/aiplatform.user"
   member  = "serviceAccount:${google_service_account.ingestion.email}"
 }
+
+# ── Retrieval service account ─────────────────────────────────────────────────
+
+resource "google_service_account" "retrieval" {
+  account_id   = "rag-poc-retrieval"
+  display_name = "RAG POC Retrieval Service Account"
+}
+
+resource "google_project_iam_member" "retrieval_aiplatform" {
+  project = var.project_id
+  role    = "roles/aiplatform.user"
+  member  = "serviceAccount:${google_service_account.retrieval.email}"
+}
+
+resource "google_project_iam_member" "retrieval_firestore" {
+  project = var.project_id
+  role    = "roles/datastore.user"
+  member  = "serviceAccount:${google_service_account.retrieval.email}"
+}
+
+resource "google_project_iam_member" "retrieval_bq_viewer" {
+  project = var.project_id
+  role    = "roles/bigquery.dataViewer"
+  member  = "serviceAccount:${google_service_account.retrieval.email}"
+}
+
+resource "google_project_iam_member" "retrieval_bq_job" {
+  project = var.project_id
+  role    = "roles/bigquery.jobUser"
+  member  = "serviceAccount:${google_service_account.retrieval.email}"
+}
+
+resource "google_project_iam_member" "retrieval_cloudsql" {
+  project = var.project_id
+  role    = "roles/cloudsql.client"
+  member  = "serviceAccount:${google_service_account.retrieval.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "retrieval_secret" {
+  secret_id = google_secret_manager_secret.db_password.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.retrieval.email}"
+}
