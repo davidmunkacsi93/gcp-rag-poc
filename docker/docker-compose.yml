@@ -43,6 +43,19 @@ services:
       timeout: 5s
       retries: 5
 
+  firestore:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    ports:
+      - "8090:8090"
+    command: ["gcloud", "emulators", "firestore", "start", "--host-port=0.0.0.0:8090"]
+    environment:
+      FIRESTORE_EMULATOR_HOST: firestore:8090
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8090 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
   gcs_data:
