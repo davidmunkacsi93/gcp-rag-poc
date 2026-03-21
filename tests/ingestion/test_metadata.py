@@ -3,6 +3,7 @@
 import uuid
 
 import pytest
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 from src.ingestion.metadata import MetadataStore
 
@@ -86,7 +87,7 @@ def test_write_chunks_writes_correct_number_of_chunk_documents(store):
 
     from google.cloud import firestore
     db = firestore.Client()
-    results = list(db.collection("chunks").where("doc_id", "==", doc_id).stream())
+    results = list(db.collection("chunks").where(filter=FieldFilter("doc_id", "==", doc_id)).stream())
     assert len(results) == 3
 
 
@@ -104,6 +105,6 @@ def test_write_chunks_each_chunk_document_has_matching_doc_id(store):
 
     from google.cloud import firestore
     db = firestore.Client()
-    results = list(db.collection("chunks").where("doc_id", "==", doc_id).stream())
+    results = list(db.collection("chunks").where(filter=FieldFilter("doc_id", "==", doc_id)).stream())
     for result in results:
         assert result.get("doc_id") == doc_id

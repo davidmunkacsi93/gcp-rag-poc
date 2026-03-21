@@ -3,6 +3,7 @@
 import uuid
 
 import pytest
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 from src.ingestion.config import IngestionConfig
 from src.ingestion.pipeline import run_ingestion
@@ -89,8 +90,8 @@ def test_run_ingestion_calls_upsert_once_per_document(monkeypatch, base_config):
 
     from google.cloud import firestore
     db = firestore.Client()
-    docs_a = list(db.collection("documents").where("source_key", "==", doc_a_key).stream())
-    docs_b = list(db.collection("documents").where("source_key", "==", doc_b_key).stream())
+    docs_a = list(db.collection("documents").where(filter=FieldFilter("source_key", "==", doc_a_key)).stream())
+    docs_b = list(db.collection("documents").where(filter=FieldFilter("source_key", "==", doc_b_key)).stream())
 
     assert len(docs_a) == 1
     assert len(docs_b) == 1
@@ -122,14 +123,14 @@ def test_run_ingestion_skips_already_ingested_document(monkeypatch, base_config)
     db = firestore.Client()
     ingested_records = list(
         db.collection("documents")
-        .where("source_key", "==", already_ingested_key)
-        .where("status", "==", "ingested")
+        .where(filter=FieldFilter("source_key", "==", already_ingested_key))
+        .where(filter=FieldFilter("status", "==", "ingested"))
         .stream()
     )
     assert len(ingested_records) >= 1
 
     chunk_records_for_skipped = list(
-        db.collection("chunks").where("doc_id", "==", pre_doc_id).stream()
+        db.collection("chunks").where(filter=FieldFilter("doc_id", "==", pre_doc_id)).stream()
     )
     assert chunk_records_for_skipped == []
 
@@ -149,8 +150,8 @@ def test_run_ingestion_marks_document_as_ingested_after_success(monkeypatch, bas
     db = firestore.Client()
     results = list(
         db.collection("documents")
-        .where("source_key", "==", unique_key)
-        .where("status", "==", "ingested")
+        .where(filter=FieldFilter("source_key", "==", unique_key))
+        .where(filter=FieldFilter("status", "==", "ingested"))
         .stream()
     )
     assert len(results) == 1
@@ -192,16 +193,16 @@ def test_run_ingestion_marks_document_as_error_and_continues_when_exception_occu
 
     error_results = list(
         db.collection("documents")
-        .where("source_key", "==", error_key)
-        .where("status", "==", "error")
+        .where(filter=FieldFilter("source_key", "==", error_key))
+        .where(filter=FieldFilter("status", "==", "error"))
         .stream()
     )
     assert len(error_results) == 1
 
     ok_results = list(
         db.collection("documents")
-        .where("source_key", "==", ok_key)
-        .where("status", "==", "ingested")
+        .where(filter=FieldFilter("source_key", "==", ok_key))
+        .where(filter=FieldFilter("status", "==", "ingested"))
         .stream()
     )
     assert len(ok_results) == 1
@@ -230,12 +231,12 @@ def test_run_ingestion_produces_chunk_records_in_firestore_for_each_processed_do
 
     for key in (doc_a_key, doc_b_key):
         doc_records = list(
-            db.collection("documents").where("source_key", "==", key).stream()
+            db.collection("documents").where(filter=FieldFilter("source_key", "==", key)).stream()
         )
         assert len(doc_records) == 1
         doc_id = doc_records[0].id
 
         chunk_records = list(
-            db.collection("chunks").where("doc_id", "==", doc_id).stream()
+            db.collection("chunks").where(filter=FieldFilter("doc_id", "==", doc_id)).stream()
         )
         assert len(chunk_records) > 0

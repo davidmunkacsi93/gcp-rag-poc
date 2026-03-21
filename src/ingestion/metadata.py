@@ -1,4 +1,5 @@
 from google.cloud import firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 
 class MetadataStore:
@@ -8,8 +9,8 @@ class MetadataStore:
     def is_ingested(self, source_key: str) -> bool:
         results = (
             self._db.collection("documents")
-            .where("source_key", "==", source_key)
-            .where("status", "==", "ingested")
+            .where(filter=FieldFilter("source_key", "==", source_key))
+            .where(filter=FieldFilter("status", "==", "ingested"))
             .limit(1)
             .stream()
         )
