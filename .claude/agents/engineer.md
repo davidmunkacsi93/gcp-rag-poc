@@ -58,10 +58,31 @@ Keep documentation changes minimal and factual — do not add explanatory prose 
 
 ## Testing
 
-Unit tests are mandatory for all implemented behaviour. Follow these principles:
+Tests are mandatory for all implemented behaviour. Follow these principles:
 
-- **Test behaviour, not implementation** — tests assert what a function does, not how it does it internally; never test private methods or implementation details
-- **One test file per source module** — `src/foo/bar.py` → `tests/foo/test_bar.py`
+### Test structure
+
+Organise tests into three levels mirroring `tests/ingestion/` as the canonical example:
+
+```
+tests/<module>/
+  unit/          # pure logic, no I/O — fast, always run
+  integration/   # local emulators (Firestore, GCS, etc.) — marked @pytest.mark.integration
+  e2e/           # real GCP services — marked @pytest.mark.gcp
+```
+
+- Every new module must have a corresponding `tests/<module>/unit/`, `tests/<module>/integration/`, and `tests/<module>/e2e/` directory with an `__init__.py`.
+- One test file per source module: `src/foo/bar.py` → `tests/foo/unit/test_bar.py` (or integration/e2e as appropriate).
+
+### Markers
+
+- No marker → unit test (always runs)
+- `@pytest.mark.integration` → requires local emulators; run with `-m integration`
+- `@pytest.mark.gcp` → requires real GCP credentials and infrastructure; run with `source .env && pytest -m gcp`
+
+### General rules
+
+- **Test behaviour, not implementation** — assert what a function does, not how; never test private methods
 - **Descriptive test names** — `test_<what>_<when>_<expected outcome>` (e.g. `test_chunk_empty_document_returns_empty_list`)
 - **Use pytest** — fixtures for shared setup, parametrize for multiple input cases
 - Do not use mocks unless crossing a real external boundary (network, filesystem, GCP API)
