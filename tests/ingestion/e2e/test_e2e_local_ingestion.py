@@ -6,7 +6,7 @@ Prerequisites:
   - Seed documents loaded: python scripts/seed/load_gcs_local.py
 
 Run:
-  pytest tests/ingestion/test_e2e_local_ingestion.py -v -m integration
+  pytest tests/ingestion/e2e/test_e2e_local_ingestion.py -v -m integration
 """
 
 import os

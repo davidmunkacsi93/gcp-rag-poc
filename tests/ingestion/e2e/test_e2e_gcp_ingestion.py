@@ -8,7 +8,7 @@ Prerequisites:
   - Emulator env vars must NOT be set
 
 Run:
-  source .env && pytest tests/ingestion/test_e2e_gcp_ingestion.py -v -m gcp
+  source .env && pytest tests/ingestion/e2e/test_e2e_gcp_ingestion.py -v -m gcp
 """
 
 import os
@@ -24,6 +24,12 @@ from src.ingestion.vector_store import MockVectorStore
 RAW_PREFIX = "raw/"
 
 _EMULATOR_VARS = ("GCS_EMULATOR_HOST", "BIGQUERY_EMULATOR_HOST", "FIRESTORE_EMULATOR_HOST", "STORAGE_EMULATOR_HOST")
+_EMULATOR_BUCKET = "rag-poc-documents-dev"
+
+pytestmark = pytest.mark.skipif(
+    os.environ.get("GCS_DOCUMENTS_BUCKET", _EMULATOR_BUCKET) == _EMULATOR_BUCKET,
+    reason="GCS_DOCUMENTS_BUCKET is the emulator default — source .env with real GCP config to run GCP tests",
+)
 
 
 @pytest.fixture(scope="module")
