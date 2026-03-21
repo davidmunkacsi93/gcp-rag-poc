@@ -142,3 +142,57 @@ resource "google_secret_manager_secret_iam_member" "ingestion_secret" {
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.ingestion.email}"
 }
+
+# ── Firestore (metadata store) ────────────────────────────────────────────────
+
+resource "google_firestore_database" "default" {
+  name        = "(default)"
+  location_id = var.region
+  type        = "FIRESTORE_NATIVE"
+}
+
+resource "google_project_iam_member" "ingestion_firestore" {
+  project = var.project_id
+  role    = "roles/datastore.user"
+  member  = "serviceAccount:${google_service_account.ingestion.email}"
+}
+
+# ── Vertex AI Vector Search ───────────────────────────────────────────────────
+
+resource "google_vertex_ai_index" "rag_poc" {
+  display_name = "rag-poc-vector-index-dev"
+  region       = var.region
+
+  metadata {
+    contents_delta_uri = "gs://${google_storage_bucket.documents.name}/index-staging"
+
+    config {
+      dimensions                  = 768
+      approximate_neighbors_count = 10
+      distance_measure_type       = "DOT_PRODUCT_DISTANCE"
+      algorithm_config {
+        brute_force_config {}
+      }
+    }
+  }
+
+  index_update_method = "STREAM_UPDATE"
+}
+
+resource "google_vertex_ai_index_endpoint" "rag_poc" {
+  display_name = "rag-poc-index-endpoint-dev"
+  region       = var.region
+  public_endpoint_enabled = true
+}
+
+resource "google_vertex_ai_index_endpoint_deployed_index" "rag_poc" {
+  index_endpoint   = google_vertex_ai_index_endpoint.rag_poc.id
+  index            = google_vertex_ai_index.rag_poc.id
+  deployed_index_id = "rag_poc_index_v1"
+}
+
+resource "google_project_iam_member" "ingestion_aiplatform" {
+  project = var.project_id
+  role    = "roles/aiplatform.user"
+  member  = "serviceAccount:${google_service_account.ingestion.email}"
+}

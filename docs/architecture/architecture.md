@@ -155,22 +155,22 @@ C4Component
 
 ```mermaid
 flowchart LR
-  subgraph Sources["External Sources"]
-    BOX[Box]
-    SF[Snowflake]
-    BQ[BigQuery]
+  subgraph Sources["Data Sources (POC)"]
+    GCSR[(GCS\nraw/ documents\nBox substitute)]
+    CSQL[(Cloud SQL\nPostgreSQL\nSnowflake substitute)]
+    BQ[(BigQuery\nGlobal Metrics)]
   end
 
   subgraph Ingestion["Ingestion Pipeline"]
     PULL[Pull & Parse]
     CHUNK[Chunk & Preprocess]
-    EMBED[Embed]
+    EMBED[Embed\nVertex AI]
   end
 
   subgraph Storage["Platform Storage"]
-    GCS[(GCS\nDocument Store)]
-    VS[(Vector Store)]
-    FS[(Firestore\nMetadata)]
+    GCSP[(GCS\nprocessed/ chunks)]
+    VS[(Vector Store\nVertex AI\nVector Search)]
+    FS[(Firestore\nMetadata & Lineage)]
   end
 
   subgraph Query["Query Path"]
@@ -181,18 +181,19 @@ flowchart LR
     GEN[Gemini Generation]
   end
 
-  BOX -->|Box API| PULL
+  GCSR -->|GCS API| PULL
+  PULL -->|doc metadata\ntitle, type, source key| FS
   PULL --> CHUNK
-  CHUNK -->|raw chunks| GCS
-  PULL -->|metadata| FS
-  GCS -->|chunks| EMBED
-  EMBED -->|embeddings + chunk text| VS
+  CHUNK -->|chunk text\n+ section| GCSP
+  CHUNK -->|chunk records\nlinked to doc| FS
+  GCSP -->|chunks| EMBED
+  EMBED -->|embeddings| VS
 
   ROUTER --> SEM --> VS
-  SEM --> FS
+  SEM -->|resolve chunk → source| FS
   ROUTER --> STR
   STR -->|NL-to-SQL| BQ
-  STR -->|NL-to-SQL| SF
+  STR -->|NL-to-SQL| CSQL
   SEM & STR --> FUSION --> GEN
 ```
 

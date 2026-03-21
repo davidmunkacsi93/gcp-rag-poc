@@ -17,3 +17,7 @@ output "cloud_sql_public_ip" {
 output "ingestion_service_account" {
   value = google_service_account.ingestion.email
 }
+
+output "vector_search_endpoint_id" {
+  value = google_vertex_ai_index_endpoint.rag_poc.id
+}
