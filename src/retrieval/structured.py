@@ -51,7 +51,7 @@ class StructuredResult:
 def _generate_sql(schema: str, nl_query: str) -> str:
     vertexai.init(
         project=os.environ["GCP_PROJECT_ID"],
-        location=os.environ.get("VERTEX_AI_LOCATION", "europe-west1"),
+        location=os.environ.get("GEMINI_LOCATION", os.environ.get("VERTEX_AI_LOCATION", "europe-west1")),
     )
     model = GenerativeModel(os.environ.get("GEMINI_MODEL", "gemini-2.0-flash"))
     prompt = (
