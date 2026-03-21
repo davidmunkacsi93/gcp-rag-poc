@@ -23,12 +23,16 @@ graph TD
         BQ[BigQuery: global_metrics]
         SQL[Cloud SQL: rag-poc-regional-dev]
         SM[Secret Manager: rag-poc-db-password]
+        FS[Firestore: default]
+        VS[Vertex AI Vector Search]
     end
 
     SA -->|storage.objectAdmin| GCS
     SA -->|dataEditor + jobUser| BQ
     SA -->|cloudsql.client| SQL
     SA -->|secretAccessor| SM
+    SA -->|datastore.user| FS
+    SA -->|aiplatform.user| VS
     SM -.->|db password| SQL
 ```
 
@@ -82,6 +86,35 @@ Substitutes for Snowflake in the POC. Queried at runtime by the Structured Retri
 
 ---
 
+### Firestore — Metadata Store
+
+| Property | Value |
+|---|---|
+| Database | `(default)` |
+| Mode | Native |
+| Location | `europe-west1` |
+
+Stores document and chunk records for the ingestion pipeline. Two collections: `documents` (one record per ingested file, tracks ingestion status) and `chunks` (one record per chunk, links back to the source document for citation resolution at query time).
+
+---
+
+### Vertex AI Vector Search — Embedding Index
+
+| Property | Value |
+|---|---|
+| Index name | `rag-poc-index-dev` |
+| Dimensions | 768 (`text-embedding-004`) |
+| Distance measure | `DOT_PRODUCT_DISTANCE` |
+| Update method | `STREAM_UPDATE` |
+| Endpoint | `rag-poc-index-endpoint-dev` |
+| Deployed index ID | `rag_poc_index_v1` |
+
+Stores dense vector embeddings of document chunks. Queried by the Semantic Retriever during the query path. The deployed index endpoint ID is exposed via `terraform output vector_search_endpoint_id`.
+
+> **Cost note:** The Vector Search deployed index is an always-on resource. Destroy when not actively developing: `terraform destroy -target=google_vertex_ai_index_endpoint_deployed_index.rag_poc`. Note that re-deploying takes 30–60 minutes.
+
+---
+
 ### Secret Manager
 
 | Secret | Purpose |
@@ -103,6 +136,8 @@ Substitutes for Snowflake in the POC. Queried at runtime by the Structured Retri
 | `roles/bigquery.jobUser` | Project | Execute BigQuery jobs |
 | `roles/cloudsql.client` | Project | Connect to Cloud SQL via Auth Proxy |
 | `roles/secretmanager.secretAccessor` | `rag-poc-db-password` | Read DB password from Secret Manager |
+| `roles/datastore.user` | Project | Read/write Firestore metadata and chunk records |
+| `roles/aiplatform.user` | Project | Upsert embeddings to and query Vector Search |
 
 ---
 
@@ -150,5 +185,7 @@ terraform destroy
 | Document store | `fake-gcs-server` on port `4443` | GCS bucket `your-gcs-bucket-name` |
 | Global metrics | `bigquery-emulator` on port `9050` | BigQuery `global_metrics.global_metrics` |
 | Regional metrics | `postgres:16` on port `5432` | Cloud SQL `rag-poc-regional-dev` at `your-cloud-sql-public-ip` |
+| Metadata store | Firestore emulator on port `8090` | Firestore `(default)` database |
+| Vector store | `MockVectorStore` (no-op, in-process) | Vertex AI Vector Search `rag_poc_index_v1` |
 
 When switching between local and GCP, remember to `unset BIGQUERY_EMULATOR_HOST` — see [data-sources.md](../research/data-sources.md).

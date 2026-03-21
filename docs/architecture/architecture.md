@@ -13,14 +13,14 @@ C4Context
 
   System(rag, "GCP RAG Platform")
 
-  System_Ext(box, "Box")
-  System_Ext(snowflake, "Snowflake")
+  System_Ext(gcs_docs, "GCS (documents)\nBox substitute")
+  System_Ext(cloudsql, "Cloud SQL\nSnowflake substitute")
   System_Ext(bigquery_ext, "BigQuery (Global)")
 
   Rel(analyst, rag, "Asks business questions", "HTTPS / Chat UI")
   Rel(dealteam, rag, "Initiates DD workflows", "HTTPS / Chat UI")
-  Rel(rag, box, "Ingests documents from", "Box API")
-  Rel(rag, snowflake, "Queries structured data from", "JDBC / Snowflake connector")
+  Rel(rag, gcs_docs, "Ingests documents from", "GCS API")
+  Rel(rag, cloudsql, "Queries structured data from", "PostgreSQL")
   Rel(rag, bigquery_ext, "Queries global metrics from", "BigQuery API")
 ```
 
@@ -31,8 +31,8 @@ C4Context
 | Enterprise Analyst | User | Regional finance analyst querying across business metrics and internal documents |
 | Deal Team / Risk Officer | User | Initiates multi-step due diligence workflows requiring cross-source synthesis |
 | GCP RAG Platform | System | The platform under design — routes NL queries to the appropriate retrieval paths and returns grounded, cited answers |
-| Box | External System | Enterprise document repository holding internal reports, strategy documents, and guidance |
-| Snowflake | External System | Regional operational data store — P&L, product-level metrics, regional KPIs |
+| GCS (documents) | External System (POC substitute for Box) | GCS bucket holding internal reports, strategy documents, and guidance in `raw/` |
+| Cloud SQL | External System (POC substitute for Snowflake) | PostgreSQL instance holding regional P&L, product-level metrics, and regional KPIs |
 | BigQuery (Global) | External System | Global data warehouse owned by HQ — enterprise-wide metrics and reference data |
 
 ---
@@ -55,18 +55,18 @@ C4Container
     Container(llm, "Generation Service", "Vertex AI / Gemini")
   }
 
-  System_Ext(box, "Box")
-  System_Ext(snowflake, "Snowflake")
+  System_Ext(gcs_src, "GCS (documents)\nBox substitute")
+  System_Ext(cloudsql, "Cloud SQL\nSnowflake substitute")
   System_Ext(bq, "BigQuery (Global)")
 
   Rel(user, ui, "Interacts with", "HTTPS")
   Rel(ui, api, "Sends queries to", "REST")
   Rel(api, vectorstore, "Semantic retrieval", "gRPC")
   Rel(api, bq, "Structured query (NL-to-SQL)", "BigQuery API")
-  Rel(api, snowflake, "Structured query (NL-to-SQL)", "JDBC")
+  Rel(api, cloudsql, "Structured query (NL-to-SQL)", "PostgreSQL")
   Rel(api, llm, "Sends assembled context", "Vertex AI API")
   Rel(api, metastore, "Reads source lineage", "Firestore API")
-  Rel(ingestion, box, "Pulls documents from", "Box API")
+  Rel(ingestion, gcs_src, "Pulls documents from", "GCS API")
   Rel(ingestion, docstore, "Stores chunks in", "GCS API")
   Rel(ingestion, vectorstore, "Writes embeddings to", "gRPC")
   Rel(ingestion, metastore, "Writes metadata to", "Firestore API")
@@ -80,7 +80,7 @@ C4Container
 |---|---|---|
 | Chat Interface | Web App / Cloud Run | User-facing interface for natural-language query entry and response display. Stateless; delegates all logic to the RAG API. |
 | RAG API | Python / Cloud Run | Central orchestrator. Receives queries, activates the appropriate retrieval paths, assembles context, and drives generation. |
-| Ingestion Service | Python / Cloud Run | Offline pipeline that pulls documents from Box, chunks and preprocesses them, generates embeddings, and writes to platform storage. Runs on schedule or event trigger. |
+| Ingestion Service | Python / Cloud Run | Offline pipeline that pulls documents from GCS, chunks and preprocesses them, generates embeddings via Vertex AI, and writes to platform storage. Runs on schedule or event trigger. |
 | Vector Store | Vertex AI Vector Search | Stores dense vector embeddings of document chunks. Queried by the Semantic Retriever for nearest-neighbour search. |
 | Document Store | GCS | Persistent storage for raw and chunked documents post-ingestion. Source of truth for document content. |
 | Metadata Store | Firestore | Stores document metadata, ingestion state, and chunk-to-source lineage records used for citation resolution. |
@@ -106,7 +106,7 @@ C4Component
   ContainerDb(vectorstore, "Vector Store", "Vertex AI Vector Search")
   ContainerDb(metastore, "Metadata Store", "Firestore")
   System_Ext(bq, "BigQuery")
-  System_Ext(snowflake, "Snowflake")
+  System_Ext(cloudsql, "Cloud SQL\nSnowflake substitute")
   Container(llm, "Generation Service", "Gemini")
 
   Rel(router, retriever_semantic, "Activates")
@@ -115,7 +115,7 @@ C4Component
   Rel(retriever_semantic, vectorstore, "Queries")
   Rel(retriever_semantic, metastore, "Resolves source lineage")
   Rel(retriever_structured, bq, "Queries")
-  Rel(retriever_structured, snowflake, "Queries")
+  Rel(retriever_structured, cloudsql, "Queries")
   Rel(fusion, prompt_builder, "Passes ranked context to")
   Rel(prompt_builder, llm, "Sends prompt to")
   Rel(agent_planner, retriever_semantic, "Calls iteratively")
@@ -129,7 +129,7 @@ C4Component
 |---|---|
 | Query Router | Classifies the incoming query and determines which retrieval paths to activate — semantic, structured, or both. For agentic queries (UC-02), hands off to the Agent Planner. |
 | Semantic Retriever | Performs nearest-neighbour search against the Vector Store to find relevant document chunks. Resolves chunk-to-source lineage via the Metadata Store for citation. |
-| Structured Retriever | Translates the natural-language query into SQL and executes it against BigQuery or Snowflake. Owns all connections to structured external sources. |
+| Structured Retriever | Translates the natural-language query into SQL and executes it against BigQuery or Cloud SQL. Owns all connections to structured external sources. |
 | Context Fusion | Merges results from all active retrieval paths, de-duplicates, and re-ranks by relevance before passing to the Prompt Builder. |
 | Prompt Builder | Assembles the final prompt: system instructions, retrieved context with citations, and the original query. Controls context window budget. |
 | Agent Planner | Implements the agentic loop for multi-step workflows (UC-02). Plans a sequence of retrieval and reasoning steps, executes them iteratively, and hands the final assembled context to the Prompt Builder. |
@@ -142,8 +142,8 @@ C4Component
 
 | Source | Type | Owner | Content | Access Pattern |
 |---|---|---|---|---|
-| Box | Unstructured | Business / local entity | Internal reports, strategy docs, risk assessments, guidance | Pull via Box API on schedule or event |
-| Snowflake | Structured | Regional finance / ops | P&L, product-level metrics, regional KPIs | NL-to-SQL query at runtime |
+| GCS (documents) | Unstructured | RAG Platform (POC substitute for Box) | Internal reports, strategy docs, risk assessments, guidance | Pull via GCS API on schedule or event |
+| Cloud SQL (PostgreSQL) | Structured | RAG Platform (POC substitute for Snowflake) | Regional P&L, product-level metrics, regional KPIs | NL-to-SQL query at runtime |
 | BigQuery (Global) | Structured | Global HQ / data platform | Enterprise-wide metrics, KPIs, reference data | NL-to-SQL query at runtime |
 | GCS (Document Store) | Unstructured | RAG Platform | Chunked and raw documents post-ingestion | Internal — read by retrieval layer |
 | Vertex AI Vector Search | Vector | RAG Platform | Embeddings of document chunks | Internal — semantic retrieval |
@@ -202,7 +202,7 @@ flowchart LR
 ### Data Governance Principles
 
 - **Lineage** — every answer chunk is traceable to a source document or query via Firestore metadata
-- **No data duplication at rest** — structured sources (Snowflake, BigQuery) are queried live; only documents are ingested and stored
-- **Access control** — service accounts follow least-privilege; Box and Snowflake credentials are stored in Secret Manager
+- **No data duplication at rest** — structured sources (Cloud SQL, BigQuery) are queried live; only documents are ingested and stored
+- **Access control** — service accounts follow least-privilege; Cloud SQL credentials are stored in Secret Manager
 - **Data residency** — all GCP-managed storage (GCS, Firestore, Vector Search) is provisioned in a single agreed region
 - **Retention** — ingested document chunks inherit the retention policy of the source; metadata is retained for the lifetime of the POC
