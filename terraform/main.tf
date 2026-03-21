@@ -164,8 +164,6 @@ resource "google_vertex_ai_index" "rag_poc" {
   region       = var.region
 
   metadata {
-    contents_delta_uri = "gs://${google_storage_bucket.documents.name}/index-staging"
-
     config {
       dimensions                  = 768
       approximate_neighbors_count = 10
