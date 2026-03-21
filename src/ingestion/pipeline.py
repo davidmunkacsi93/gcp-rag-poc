@@ -12,7 +12,7 @@ from src.ingestion.vector_store import MockVectorStore, VectorStore
 
 def run_ingestion(config: IngestionConfig, vector_store=None) -> None:
     if vector_store is None:
-        vector_store = VectorStore(config.index_endpoint, config.deployed_index_id)
+        vector_store = VectorStore(config.index_id, config.index_endpoint, config.deployed_index_id)
 
     metadata = MetadataStore()
     embedder = get_embedder(config.embedding_model, config.vertex_location)

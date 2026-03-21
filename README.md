@@ -10,13 +10,23 @@ A proof-of-concept RAG (Retrieval-Augmented Generation) platform built on GCP, d
 - [Infrastructure](docs/architecture/infrastructure.md)
 - [Implementation Plan](docs/project/implementation/index.md)
 
+## Environment Setup
+
+Two env files control which services are used. Copy the examples and fill in any blanks:
+
+```bash
+cp .env.local.example .env.local   # local Docker emulators — values pre-filled
+cp .env.gcp.example .env.gcp       # real GCP services — fill from: cd terraform && terraform output
+```
+
+Both files are gitignored. Never commit credentials.
+
 ## Local Development
 
 **Prerequisites:** Docker Desktop, Python 3.12+
 
 ```bash
-# 1. Clone and set up environment
-cp .env.example .env
+# 1. Set up Python environment
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
@@ -24,37 +34,37 @@ pip install -r requirements.txt
 docker compose -f docker/docker-compose.yml up -d
 
 # 3. Run smoke tests
-pytest tests/test_local_services.py
+source .env.local && pytest tests/test_local_services.py
 
 # 4. Generate and load seed data
+source .env.local
 python scripts/seed/generate_structured.py
 python scripts/seed/generate_documents.py
 python scripts/seed/load_postgres_local.py
 python scripts/seed/load_bigquery_local.py
 python scripts/seed/load_gcs_local.py
 
-# 5. Run E2E data tests
-pytest tests/seed/test_e2e_local_data.py -v
+# 5. Run local tests
+source .env.local && pytest -m "not gcp" -v
 ```
 
-## GCP Data Sources
+## GCP
 
-**Prerequisites:** `gcloud auth application-default login`, `.env` populated with `CLOUD_SQL_*` and `GCS_BUCKET`.
+**Prerequisites:** `gcloud auth application-default login`, `terraform apply` complete.
 
 ```bash
 # Load seed data into GCP
-source .env && unset BIGQUERY_EMULATOR_HOST
+source .env.gcp
 python scripts/seed/load_postgres_gcp.py
 python scripts/seed/load_bigquery_gcp.py
 python scripts/seed/load_gcs_gcp.py
 
-# Run GCP E2E tests
-source .env && unset BIGQUERY_EMULATOR_HOST
-pytest tests/seed/test_e2e_gcp_data.py -v -m gcp
-```
+# Run ingestion pipeline
+source .env.gcp && python -m src.ingestion.pipeline
 
-> **Important:** `BIGQUERY_EMULATOR_HOST` in `.env` routes BigQuery calls to the local emulator.
-> Always `unset BIGQUERY_EMULATOR_HOST` before running scripts or tests against real GCP.
+# Run GCP E2E tests
+source .env.gcp && pytest -m gcp -v
+```
 
 ## Project Structure
 
