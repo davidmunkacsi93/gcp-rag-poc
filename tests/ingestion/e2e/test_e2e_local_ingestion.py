@@ -32,6 +32,7 @@ def config():
         chunk_overlap=50,
         embedding_model="stub",
         vertex_location="europe-west1",
+        index_id="",
         index_endpoint="",
         deployed_index_id="",
     )

@@ -58,6 +58,7 @@ def base_config(monkeypatch):
         chunk_overlap=20,
         embedding_model="stub",
         vertex_location="europe-west1",
+        index_id="",
         index_endpoint="",
         deployed_index_id="",
     )
