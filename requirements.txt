@@ -1,6 +1,8 @@
 # GCP
 google-cloud-storage==2.19.0
 google-cloud-bigquery==3.27.0
+google-cloud-firestore>=2.19.0
+google-cloud-aiplatform>=1.71.0
 
 # Database
 psycopg[binary]>=3.2
