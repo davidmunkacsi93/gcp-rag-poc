@@ -1,10 +1,13 @@
 """
-Session-scoped fixtures for the self-contained GCP E2E test suite.
+Package-scoped fixtures for the self-contained GCP E2E test suite.
 
 Setup:   ingest two controlled test documents into real GCP services
          (Vertex AI embedder, Vertex AI Vector Search, Firestore).
 Teardown: remove exactly what was created — Firestore records and
           vector store datapoints — leaving the environment unchanged.
+
+Scoped to "package" so env vars are restored after all tests/e2e/ tests
+complete, before any other test modules run in the same pytest session.
 """
 
 import os
@@ -69,9 +72,9 @@ and technology integration failures requiring executive attention.
 }
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="package", autouse=True)
 def gcp_env():
-    """Load .env.gcp and unset all emulator vars for the duration of the session."""
+    """Load .env.gcp and unset emulator vars for the duration of the package."""
     gcp_values = {k: v for k, v in dotenv_values(_GCP_ENV_FILE).items() if v is not None}
     all_keys = set(gcp_values) | set(_EMULATOR_VARS)
     saved = {k: os.environ.get(k) for k in all_keys}
@@ -90,12 +93,12 @@ def gcp_env():
             os.environ[k] = orig
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="package")
 def pipeline_data(gcp_env):
     """
     Ingest the test documents into real GCP services and yield metadata.
     On teardown, remove exactly the Firestore records and vector datapoints
-    created during this session.
+    created during this run.
     """
     db = firestore.Client()
 
@@ -132,13 +135,6 @@ def pipeline_data(gcp_env):
         "doc_source_keys": list(_TEST_DOCS.keys()),
         "chunk_vector_ids": new_chunk_vector_ids,
     }
-
-    # Teardown — restore environment and remove only what we created
-    for k, v in dotenv_values(_GCP_ENV_FILE).items():
-        if v is not None:
-            os.environ[k] = v
-    for var in _EMULATOR_VARS:
-        os.environ.pop(var, None)
 
     if new_chunk_vector_ids:
         aiplatform.init(
