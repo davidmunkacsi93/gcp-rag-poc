@@ -268,3 +268,22 @@ resource "google_secret_manager_secret_iam_member" "retrieval_secret" {
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.retrieval.email}"
 }
+
+# ── Generation service account ────────────────────────────────────────────────
+
+resource "google_service_account" "generation" {
+  account_id   = "rag-poc-generation"
+  display_name = "RAG POC Generation Service Account"
+}
+
+resource "google_project_iam_member" "generation_aiplatform" {
+  project = var.project_id
+  role    = "roles/aiplatform.user"
+  member  = "serviceAccount:${google_service_account.generation.email}"
+}
+
+resource "google_project_iam_member" "generation_firestore" {
+  project = var.project_id
+  role    = "roles/datastore.viewer"
+  member  = "serviceAccount:${google_service_account.generation.email}"
+}
