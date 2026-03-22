@@ -3,7 +3,6 @@ E2E tests for the ingestion pipeline against real GCP services.
 
 Prerequisites:
   - GCP auth: gcloud auth application-default login
-  - EMBEDDING_MODEL=stub to avoid Vertex AI costs
 
 Run:
   pytest tests/ingestion/e2e/gcp/ -v -m gcp
@@ -17,32 +16,17 @@ from google.cloud.firestore_v1.base_query import FieldFilter
 
 from src.ingestion.config import IngestionConfig
 from src.ingestion.pipeline import run_ingestion
-from src.ingestion.vector_store import MockVectorStore
 
 RAW_PREFIX = "raw/"
 
 
 @pytest.fixture(scope="module")
 def gcp_config(gcp_env):
-    saved_embedding = os.environ.get("EMBEDDING_MODEL")
-    os.environ["EMBEDDING_MODEL"] = "stub"
-    cfg = IngestionConfig.from_env()
-    yield cfg
-    if saved_embedding is not None:
-        os.environ["EMBEDDING_MODEL"] = saved_embedding
-    else:
-        os.environ.pop("EMBEDDING_MODEL", None)
-
-
-@pytest.fixture(scope="module")
-def gcp_ingested_store(gcp_config):
-    store = MockVectorStore()
-    run_ingestion(gcp_config, vector_store=store)
-    return store
+    return IngestionConfig.from_env()
 
 
 @pytest.mark.gcp
-def test_gcp_pipeline_ingests_all_documents(gcp_config, gcp_ingested_store):
+def test_gcp_pipeline_ingests_all_documents(gcp_config):
     db = firestore.Client()
 
     ingested_docs = list(
@@ -57,11 +41,8 @@ def test_gcp_pipeline_ingests_all_documents(gcp_config, gcp_ingested_store):
 
 @pytest.mark.gcp
 def test_gcp_pipeline_is_idempotent(gcp_config):
-    store1 = MockVectorStore()
-    run_ingestion(gcp_config, vector_store=store1)
-
-    store2 = MockVectorStore()
-    run_ingestion(gcp_config, vector_store=store2)
+    run_ingestion(gcp_config)
+    run_ingestion(gcp_config)
 
     db = firestore.Client()
     all_docs = list(
@@ -82,7 +63,7 @@ def test_gcp_pipeline_is_idempotent(gcp_config):
 
 
 @pytest.mark.gcp
-def test_gcp_chunk_lineage_is_complete(gcp_config, gcp_ingested_store):
+def test_gcp_chunk_lineage_is_complete(gcp_config):
     db = firestore.Client()
 
     chunk_docs = list(db.collection("chunks").limit(50).stream())

@@ -14,6 +14,11 @@ _EMULATOR_VARS = (
 )
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _require_gcp_data(gcp_ingestion_setup):
+    """Ensure real GCP data is ingested before any retrieval test."""
+
+
 @pytest.fixture(autouse=True)
 def gcp_env():
     """Load .env.gcp values and unset emulator vars for each GCP E2E test.
