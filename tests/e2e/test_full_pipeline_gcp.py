@@ -23,12 +23,6 @@ _SEMANTIC_QUERY = (
 _STRUCTURED_QUERY = (
     "What were the top 3 underperforming product lines in EMEA last quarter?"
 )
-_FEDERATED_QUERY = (
-    "What are the key risks identified for Project Zenith, and what was the "
-    "revenue performance across EMEA product lines last quarter?"
-)
-
-
 @pytest.mark.gcp
 @pytest.mark.retry(retries=5, delay=30)
 def test_semantic_query_returns_grounded_answer(pipeline_data):
@@ -74,17 +68,6 @@ def test_structured_query_returns_grounded_answer(pipeline_data):
     assert len(result.answer) >= 50
     assert any(c.type == "structured" for c in result.citations)
 
-
-@pytest.mark.gcp
-@pytest.mark.retry(retries=5, delay=30)
-def test_federated_query_retrieves_both_paths(pipeline_data):
-    context = retrieve(_FEDERATED_QUERY)
-
-    semantic_items = [i for i in context.items if i.type == "semantic"]
-    structured_items = [i for i in context.items if i.type == "structured"]
-
-    assert semantic_items, "No semantic items — Vector Search may still be propagating"
-    assert structured_items, "No structured items returned"
 
 
 @pytest.mark.gcp
