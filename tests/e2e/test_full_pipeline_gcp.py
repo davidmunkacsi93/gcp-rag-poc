@@ -24,8 +24,8 @@ _STRUCTURED_QUERY = (
     "What were the top 3 underperforming product lines in EMEA last quarter?"
 )
 _FEDERATED_QUERY = (
-    "What are the regulatory risks for Project Zenith and which EMEA product "
-    "lines are underperforming?"
+    "What are the key risks identified for Project Zenith, and what was the "
+    "revenue performance across EMEA product lines last quarter?"
 )
 
 
