@@ -3,12 +3,10 @@ E2E tests for the ingestion pipeline against real GCP services.
 
 Prerequisites:
   - GCP auth: gcloud auth application-default login
-  - .env sourced with GCP_PROJECT_ID, GCS_DOCUMENTS_BUCKET, FIRESTORE_* set
   - EMBEDDING_MODEL=stub to avoid Vertex AI costs
-  - Emulator env vars must NOT be set
 
 Run:
-  source .env && pytest tests/ingestion/e2e/test_e2e_gcp_ingestion.py -v -m gcp
+  pytest tests/ingestion/e2e/gcp/ -v -m gcp
 """
 
 import os
@@ -23,25 +21,13 @@ from src.ingestion.vector_store import MockVectorStore
 
 RAW_PREFIX = "raw/"
 
-_EMULATOR_VARS = ("GCS_EMULATOR_HOST", "BIGQUERY_EMULATOR_HOST", "FIRESTORE_EMULATOR_HOST", "STORAGE_EMULATOR_HOST")
-_EMULATOR_BUCKET = "rag-poc-documents-dev"
-
-pytestmark = pytest.mark.skipif(
-    os.environ.get("GCS_DOCUMENTS_BUCKET", _EMULATOR_BUCKET) == _EMULATOR_BUCKET,
-    reason="GCS_DOCUMENTS_BUCKET is the emulator default — source .env with real GCP config to run GCP tests",
-)
-
 
 @pytest.fixture(scope="module")
-def gcp_config():
-    saved = {var: os.environ.pop(var, None) for var in _EMULATOR_VARS}
+def gcp_config(gcp_env):
     saved_embedding = os.environ.get("EMBEDDING_MODEL")
     os.environ["EMBEDDING_MODEL"] = "stub"
     cfg = IngestionConfig.from_env()
     yield cfg
-    for var, val in saved.items():
-        if val is not None:
-            os.environ[var] = val
     if saved_embedding is not None:
         os.environ["EMBEDDING_MODEL"] = saved_embedding
     else:
