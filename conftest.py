@@ -18,11 +18,12 @@ _EMULATOR_VARS = (
 
 @pytest.fixture(scope="session")
 def gcp_ingestion_setup():
-    """Session-scoped fixture: clear Firestore, run real ingestion, clean up after.
+    """Session-scoped fixture: run real ingestion, clean up only what was added.
 
     Uses the real VectorStore (no MockVectorStore) so Firestore and Vector Search
-    are always in sync. Called explicitly by GCP test conftest files via a
-    session-scoped autouse fixture — never runs for local/unit tests.
+    are always in sync. Pre-existing documents are never touched — only IDs created
+    in this session are removed on teardown, leaving the system in the state it was
+    before the test run. Never runs for local/unit tests.
     """
     from google.cloud import aiplatform, firestore
     from src.ingestion.config import IngestionConfig
@@ -38,18 +39,25 @@ def gcp_ingestion_setup():
     for var in _EMULATOR_VARS:
         os.environ.pop(var, None)
 
-    # Clear Firestore
     db = firestore.Client()
-    for collection in ("documents", "chunks"):
-        for doc in db.collection(collection).stream():
-            doc.reference.delete()
+
+    # Snapshot pre-existing IDs so teardown only removes what this session adds
+    existing_doc_ids = {doc.id for doc in db.collection("documents").stream()}
+    existing_chunk_ids = {doc.id for doc in db.collection("chunks").stream()}
 
     # Run real ingestion (vector_store=None → creates real VectorStore)
     config = IngestionConfig.from_env()
     run_ingestion(config)
 
-    # Collect chunk IDs for teardown cleanup
-    chunk_ids = [doc.id for doc in db.collection("chunks").stream()]
+    # Collect only the IDs created in this session
+    new_doc_ids = [
+        doc.id for doc in db.collection("documents").stream()
+        if doc.id not in existing_doc_ids
+    ]
+    new_chunk_ids = [
+        doc.id for doc in db.collection("chunks").stream()
+        if doc.id not in existing_chunk_ids
+    ]
 
     # Restore env — per-test gcp_env fixtures handle test-level env
     for k, orig in saved.items():
@@ -60,26 +68,25 @@ def gcp_ingestion_setup():
 
     yield
 
-    # --- teardown: activate GCP env again ---
+    # --- teardown: remove only what this session created ---
     for k, v in gcp_values.items():
         os.environ[k] = v
     for var in _EMULATOR_VARS:
         os.environ.pop(var, None)
 
-    # Remove datapoints from Vector Search
-    aiplatform.init(
-        project=os.environ["GCP_PROJECT_ID"],
-        location=os.environ["VERTEX_AI_LOCATION"],
-    )
-    index = aiplatform.MatchingEngineIndex(index_name=os.environ["VERTEX_AI_INDEX_ID"])
-    if chunk_ids:
-        index.remove_datapoints(datapoint_ids=chunk_ids)
+    if new_chunk_ids:
+        aiplatform.init(
+            project=os.environ["GCP_PROJECT_ID"],
+            location=os.environ["VERTEX_AI_LOCATION"],
+        )
+        index = aiplatform.MatchingEngineIndex(index_name=os.environ["VERTEX_AI_INDEX_ID"])
+        index.remove_datapoints(datapoint_ids=new_chunk_ids)
 
-    # Clear Firestore
     db = firestore.Client()
-    for collection in ("documents", "chunks"):
-        for doc in db.collection(collection).stream():
-            doc.reference.delete()
+    for doc_id in new_doc_ids:
+        db.collection("documents").document(doc_id).delete()
+    for chunk_id in new_chunk_ids:
+        db.collection("chunks").document(chunk_id).delete()
 
     # Restore env
     for k, orig in saved.items():
