@@ -163,6 +163,25 @@ resource "google_firestore_database" "default" {
   type        = "FIRESTORE_NATIVE"
 }
 
+resource "google_firestore_index" "documents_status_source_key" {
+  project    = var.project_id
+  database   = google_firestore_database.default.name
+  collection = "documents"
+
+  fields {
+    field_path = "status"
+    order      = "ASCENDING"
+  }
+  fields {
+    field_path = "source_key"
+    order      = "ASCENDING"
+  }
+  fields {
+    field_path = "__name__"
+    order      = "ASCENDING"
+  }
+}
+
 resource "google_project_iam_member" "ingestion_firestore" {
   project = var.project_id
   role    = "roles/datastore.user"
