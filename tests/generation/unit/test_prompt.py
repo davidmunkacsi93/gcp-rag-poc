@@ -80,11 +80,13 @@ def test_context_truncation_respects_max_context_tokens_budget():
 
 def test_truncation_keeps_higher_scored_items_over_lower_scored():
     large_content = "y" * 400
-    items = [_semantic(f"src/{i}", large_content, score=float(i)) for i in range(5)]
+    # Items in descending score order, as fuse() always produces
+    items = [_semantic(f"src/{i}", large_content, score=float(5 - i)) for i in range(5)]
     config = GenerationConfig(max_context_tokens=300)
     prompt = build_prompt("query", FusedContext(items=items), config)
-    # Highest-scored item (src/4) should be present
-    assert "src/4" in prompt
+    # First item (highest score = src/0) should be present; tail items should be dropped
+    assert "src/0" in prompt
+    assert "src/4" not in prompt
 
 
 def test_empty_context_returns_prompt_with_system_instruction_and_query():
