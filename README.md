@@ -46,6 +46,9 @@ python scripts/seed/load_gcs_local.py
 
 # 5. Run local tests
 source .env.local && pytest -m "not gcp" -v
+
+# Run retrieval tests only
+source .env.local && pytest tests/retrieval/ -m "not gcp" -v
 ```
 
 ## GCP
@@ -69,9 +72,15 @@ source .env.gcp && pytest -m gcp -v
 ## Project Structure
 
 ```
-src/                  # Application source code
-tests/                # Tests
+src/
+  ingestion/          # Ingestion pipeline (reader, parser, chunker, embedder, vector store)
+  retrieval/          # Retrieval pipeline (router, semantic, structured, fusion)
+tests/
+  ingestion/          # Unit, integration, and E2E tests for ingestion
+  retrieval/          # Unit, integration, and E2E tests for retrieval
+  seed/               # Seed data generation and loading tests
 docker/               # Docker Compose for local services
-docs/                 # Architecture and project documentation
-scripts/              # Seed data and utility scripts
+docs/                 # Architecture, project, and ADR documentation
+scripts/              # Seed data generation and loading scripts
+terraform/            # GCP infrastructure as code
 ```

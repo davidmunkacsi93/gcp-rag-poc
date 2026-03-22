@@ -74,11 +74,11 @@ Mark with `@pytest.mark.gcp`.
 
 ### Completion Criteria
 
-- [ ] Firestore and Vertex AI Vector Search provisioned via Terraform
-- [ ] Firestore emulator running in `docker compose up`
-- [ ] `run_ingestion` processes all 15 seed documents end-to-end without errors
-- [ ] All chunks traceable in Firestore with source lineage
-- [ ] Embeddings upserted to Vertex AI Vector Search index
-- [ ] Pipeline is idempotent — re-running does not create duplicate records
-- [ ] Unit and integration tests pass locally (`pytest -m "not gcp"`)
-- [ ] E2E GCP test passes (`pytest -m gcp tests/ingestion/`)
+- [x] Firestore and Vertex AI Vector Search provisioned via Terraform
+- [x] Firestore emulator running in `docker compose up`
+- [x] `run_ingestion` processes all 15 seed documents end-to-end without errors
+- [x] All chunks traceable in Firestore with source lineage
+- [x] Embeddings upserted to Vertex AI Vector Search index
+- [x] Pipeline is idempotent — re-running does not create duplicate records
+- [x] Unit and integration tests pass locally (`pytest -m "not gcp"`)
+- [x] E2E GCP test passes (`pytest -m gcp tests/ingestion/`)

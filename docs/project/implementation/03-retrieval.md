@@ -147,10 +147,10 @@ Assertions:
 
 ### Completion Criteria
 
-- [ ] Retrieval service account provisioned via Terraform with least-privilege IAM
-- [ ] `retrieve(query)` returns a `FusedContext` for all three query types (semantic, structured, federated)
-- [ ] SQL injection guard rejects any non-SELECT generated SQL before execution
-- [ ] Context fusion de-duplicates chunks and enforces the `max_context_items` budget
-- [ ] Unit and integration tests pass locally (`pytest -m "not gcp"`)
-- [ ] E2E GCP test passes (`pytest -m gcp tests/retrieval/`)
-- [ ] All retrieval results carry a `source_key` or `generated_sql` field sufficient for Phase 04 citation assembly
+- [x] Retrieval service account provisioned via Terraform with least-privilege IAM
+- [x] `retrieve(query)` returns a `FusedContext` for all three query types (semantic, structured, federated)
+- [x] SQL injection guard rejects any non-SELECT generated SQL before execution
+- [x] Context fusion de-duplicates chunks and enforces the `max_context_items` budget
+- [x] Unit and integration tests pass locally (`pytest -m "not gcp"`)
+- [x] E2E GCP test passes (`pytest -m gcp tests/retrieval/`)
+- [x] All retrieval results carry a `source_key` or `generated_sql` field sufficient for Phase 04 citation assembly

@@ -12,6 +12,18 @@ provider "google" {
   region  = var.region
 }
 
+# ── Required APIs ─────────────────────────────────────────────────────────────
+
+resource "google_project_service" "aiplatform" {
+  service            = "aiplatform.googleapis.com"
+  disable_on_destroy = false
+}
+
+resource "google_project_service" "generativelanguage" {
+  service            = "generativelanguage.googleapis.com"
+  disable_on_destroy = false
+}
+
 # ── GCS bucket (Box substitute) ──────────────────────────────────────────────
 
 resource "google_storage_bucket" "documents" {
@@ -149,6 +161,25 @@ resource "google_firestore_database" "default" {
   name        = "(default)"
   location_id = var.region
   type        = "FIRESTORE_NATIVE"
+}
+
+resource "google_firestore_index" "documents_status_source_key" {
+  project    = var.project_id
+  database   = google_firestore_database.default.name
+  collection = "documents"
+
+  fields {
+    field_path = "status"
+    order      = "ASCENDING"
+  }
+  fields {
+    field_path = "source_key"
+    order      = "ASCENDING"
+  }
+  fields {
+    field_path = "__name__"
+    order      = "ASCENDING"
+  }
 }
 
 resource "google_project_iam_member" "ingestion_firestore" {

@@ -1,7 +1,13 @@
+import logging
 import os
 from dataclasses import dataclass
 
+import google.auth
+import google.auth.transport.requests
+import requests as http_requests
 from google.cloud import aiplatform
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -11,15 +17,23 @@ class Neighbor:
 
 
 class VectorSearchClient:
+    """Uses raw HTTP for find_neighbors to avoid gapic REST transport state
+    pollution ($alt=json;enum-encoding=int) that occurs after vertexai.init()
+    is called (e.g. from the structured retriever), which causes the SDK's
+    MatchingEngineIndexEndpoint.find_neighbors to fail on the vdb.vertexai.goog
+    match endpoint with a 400 error on all subsequent calls."""
+
     def __init__(self, endpoint_name: str, deployed_index_id: str) -> None:
+        self._deployed_index_id = deployed_index_id
         aiplatform.init(
             project=os.environ["GCP_PROJECT_ID"],
             location=os.environ["VERTEX_AI_LOCATION"],
         )
-        self._endpoint = aiplatform.MatchingEngineIndexEndpoint(
+        sdk_ep = aiplatform.MatchingEngineIndexEndpoint(
             index_endpoint_name=endpoint_name
         )
-        self._deployed_index_id = deployed_index_id
+        self._resource_name = sdk_ep.resource_name
+        self._domain = sdk_ep.public_endpoint_domain_name
 
     def find_neighbors(
         self,
@@ -27,19 +41,35 @@ class VectorSearchClient:
         top_k: int = 5,
         doc_type_filter: str | None = None,
     ) -> list[Neighbor]:
-        restricts = (
-            [{"namespace": "doc_type", "allow_list": [doc_type_filter]}]
-            if doc_type_filter
-            else None
+        credentials, _ = google.auth.default()
+        credentials.refresh(google.auth.transport.requests.Request())
+
+        url = f"https://{self._domain}/v1beta1/{self._resource_name}:findNeighbors"
+        payload = {
+            "deployed_index_id": self._deployed_index_id,
+            "queries": [
+                {
+                    "datapoint": {"feature_vector": query_embedding},
+                    "neighbor_count": top_k,
+                }
+            ],
+        }
+        resp = http_requests.post(
+            url,
+            json=payload,
+            headers={"Authorization": f"Bearer {credentials.token}"},
+            timeout=30,
         )
-        response = self._endpoint.find_neighbors(
-            deployed_index_id=self._deployed_index_id,
-            queries=[query_embedding],
-            num_neighbors=top_k,
-            restricts=restricts,
-        )
-        neighbors = response[0] if response else []
-        return [Neighbor(id=n.id, distance=n.distance) for n in neighbors]
+        resp.raise_for_status()
+        data = resp.json()
+        raw_neighbors = data.get("nearestNeighbors", [{}])[0].get("neighbors", [])
+        return [
+            Neighbor(
+                id=n["datapoint"]["datapointId"],
+                distance=n.get("distance", 0.0),
+            )
+            for n in raw_neighbors
+        ]
 
 
 class StubVectorSearchClient:
