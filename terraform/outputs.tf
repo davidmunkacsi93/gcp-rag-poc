@@ -29,3 +29,27 @@ output "vector_search_index_id" {
 output "vector_search_endpoint_id" {
   value = google_vertex_ai_index_endpoint.rag_poc.id
 }
+
+output "generation_service_account" {
+  value = google_service_account.generation.email
+}
+
+output "frontend_service_account" {
+  value = google_service_account.frontend.email
+}
+
+output "artifact_registry_repository" {
+  value = google_artifact_registry_repository.rag_poc_images.name
+}
+
+output "retrieval_service_url" {
+  value = google_cloud_run_v2_service.retrieval.uri
+}
+
+output "generation_service_url" {
+  value = google_cloud_run_v2_service.generation.uri
+}
+
+output "frontend_url" {
+  value = google_cloud_run_v2_service.frontend.uri
+}

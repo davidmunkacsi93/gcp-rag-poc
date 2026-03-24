@@ -268,3 +268,212 @@ resource "google_secret_manager_secret_iam_member" "retrieval_secret" {
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.retrieval.email}"
 }
+
+# ── Generation service account ────────────────────────────────────────────────
+
+resource "google_service_account" "generation" {
+  account_id   = "rag-poc-generation"
+  display_name = "RAG POC Generation Service Account"
+}
+
+resource "google_project_iam_member" "generation_aiplatform" {
+  project = var.project_id
+  role    = "roles/aiplatform.user"
+  member  = "serviceAccount:${google_service_account.generation.email}"
+}
+
+resource "google_project_iam_member" "generation_firestore" {
+  project = var.project_id
+  role    = "roles/datastore.user"
+  member  = "serviceAccount:${google_service_account.generation.email}"
+}
+
+resource "google_artifact_registry_repository" "rag_poc_images" {
+  repository_id = "rag-poc-images"
+  location      = var.region
+  format        = "DOCKER"
+  description   = "Docker images for RAG POC services"
+
+  depends_on = [google_project_service.required]
+}
+
+# ── Service cloud run instances ────────────────────────────────────────────────
+
+resource "google_cloud_run_v2_service" "retrieval" {
+  name     = "retrieval-service"
+  location = var.region
+
+  template {
+    service_account = google_service_account.retrieval.email
+
+    scaling {
+      min_instance_count = 0
+      max_instance_count = 2
+    }
+
+    containers {
+      image = "us-docker.pkg.dev/cloudrun/container/hello"
+
+      resources {
+        limits = {
+          memory = "512Mi"
+          cpu    = "1"
+        }
+      }
+
+      ports {
+        container_port = 8080
+      }
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [template[0].containers[0].image]
+  }
+
+  depends_on = [
+    google_artifact_registry_repository.rag_poc_images,
+    google_project_service.required,
+  ]
+}
+
+resource "google_cloud_run_v2_service" "generation" {
+  name     = "generation-service"
+  location = var.region
+
+  template {
+    service_account = google_service_account.generation.email
+
+    scaling {
+      min_instance_count = 0
+      max_instance_count = 2
+    }
+
+    containers {
+      image = "us-docker.pkg.dev/cloudrun/container/hello"
+
+      resources {
+        limits = {
+          memory = "512Mi"
+          cpu    = "1"
+        }
+      }
+
+      ports {
+        container_port = 8080
+      }
+
+      env {
+        name  = "RETRIEVAL_SERVICE_URL"
+        value = google_cloud_run_v2_service.retrieval.uri
+      }
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [template[0].containers[0].image]
+  }
+
+  depends_on = [
+    google_artifact_registry_repository.rag_poc_images,
+    google_project_service.required,
+  ]
+}
+
+resource "google_service_account" "frontend" {
+  account_id   = "rag-poc-frontend"
+  display_name = "RAG POC Frontend Service Account"
+}
+
+resource "google_cloud_run_v2_service" "frontend" {
+  name     = "frontend"
+  location = var.region
+
+  template {
+    service_account = google_service_account.frontend.email
+
+    scaling {
+      min_instance_count = 0
+      max_instance_count = 1
+    }
+
+    containers {
+      image = "us-docker.pkg.dev/cloudrun/container/hello"
+
+      resources {
+        limits = {
+          memory = "512Mi"
+          cpu    = "1"
+        }
+      }
+
+      ports {
+        container_port = 8501
+      }
+
+      env {
+        name  = "GENERATION_SERVICE_URL"
+        value = google_cloud_run_v2_service.generation.uri
+      }
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [template[0].containers[0].image]
+  }
+
+  depends_on = [
+    google_artifact_registry_repository.rag_poc_images,
+    google_project_service.required,
+  ]
+}
+
+# Make the frontend publicly accessible
+resource "google_cloud_run_v2_service_iam_member" "frontend_public" {
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.frontend.name
+  role     = "roles/run.invoker"
+  member   = "allUsers"
+}
+
+# IAM bindings for service-to-service invocation
+
+resource "google_cloud_run_v2_service_iam_member" "frontend_invokes_generation" {
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.generation.name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${google_service_account.frontend.email}"
+}
+
+resource "google_cloud_run_v2_service_iam_member" "generation_invokes_retrieval" {
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.retrieval.name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${google_service_account.generation.email}"
+}
+
+# Cloud Build trigger
+# Prerequisite: the Cloud Build GitHub App must be connected to the repository
+# in the GCP console before this trigger can function.
+
+resource "google_cloudbuild_trigger" "rag_poc_deploy" {
+
+  name        = "rag-poc-deploy"
+  description = "Deploy RAG POC services to Cloud Run on push to master"
+  location    = var.region
+
+  github {
+    owner = var.github_owner
+    name  = var.github_repo
+    push {
+      branch = "^master$"
+    }
+  }
+
+  filename = "cloudbuild.yaml"
+
+  depends_on = [google_project_service.required]
+}
