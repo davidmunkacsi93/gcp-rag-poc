@@ -455,25 +455,3 @@ resource "google_cloud_run_v2_service_iam_member" "generation_invokes_retrieval"
   member   = "serviceAccount:${google_service_account.generation.email}"
 }
 
-# Cloud Build trigger
-# Prerequisite: the Cloud Build GitHub App must be connected to the repository
-# in the GCP console before this trigger can function.
-
-resource "google_cloudbuild_trigger" "rag_poc_deploy" {
-
-  name        = "rag-poc-deploy"
-  description = "Deploy RAG POC services to Cloud Run on push to master"
-  location    = var.region
-
-  github {
-    owner = var.github_owner
-    name  = var.github_repo
-    push {
-      branch = "^master$"
-    }
-  }
-
-  filename = "cloudbuild.yaml"
-
-  depends_on = [google_project_service.required]
-}

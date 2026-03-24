@@ -14,15 +14,3 @@ variable "db_password" {
   type        = string
   sensitive   = true
 }
-
-variable "github_owner" {
-  description = "GitHub repository owner for Cloud Build trigger"
-  type        = string
-  default     = ""
-}
-
-variable "github_repo" {
-  description = "GitHub repository name for Cloud Build trigger"
-  type        = string
-  default     = "gcp-rag-poc"
-}
