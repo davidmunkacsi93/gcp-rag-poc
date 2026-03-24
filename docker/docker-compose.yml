@@ -56,6 +56,60 @@ services:
       timeout: 5s
       retries: 5
 
+  retrieval-service:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.retrieval
+    ports:
+      - "8081:8080"
+    environment:
+      FIRESTORE_EMULATOR_HOST: firestore:8090
+      BIGQUERY_EMULATOR_HOST: http://bigquery-emulator:9050
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-rag}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rag}
+      POSTGRES_DB: ${POSTGRES_DB:-regional}
+      GCP_PROJECT_ID: ${GCP_PROJECT_ID:-gcp-rag-poc}
+      EMBEDDING_MODEL: stub
+    depends_on:
+      firestore:
+        condition: service_healthy
+      bigquery-emulator:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  generation-service:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.generation
+    ports:
+      - "8080:8080"
+    environment:
+      RETRIEVAL_SERVICE_URL: http://retrieval-service:8080
+      FIRESTORE_EMULATOR_HOST: firestore:8090
+      GCP_PROJECT_ID: ${GCP_PROJECT_ID:-gcp-rag-poc}
+      GENERATION_STUB: "true"
+      EMBEDDING_MODEL: stub
+    depends_on:
+      retrieval-service:
+        condition: service_started
+      firestore:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    ports:
+      - "8501:8501"
+    environment:
+      GENERATION_SERVICE_URL: http://generation-service:8080
+    depends_on:
+      generation-service:
+        condition: service_started
+
 volumes:
   postgres_data:
   gcs_data:
