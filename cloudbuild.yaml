@@ -1,13 +1,13 @@
 steps:
   # Build images
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/rag-poc-images/retrieval-service:${SHORT_SHA}', '-f', 'docker/Dockerfile.retrieval', '.']
+    args: ['build', '-t', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/rag-poc-images/retrieval-service:${SHORT_SHA}', '-f', 'src/retrieval/Dockerfile', '.']
 
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/rag-poc-images/generation-service:${SHORT_SHA}', '-f', 'docker/Dockerfile.generation', '.']
+    args: ['build', '-t', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/rag-poc-images/generation-service:${SHORT_SHA}', '-f', 'src/generation/Dockerfile', '.']
 
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/rag-poc-images/frontend:${SHORT_SHA}', '-f', 'docker/Dockerfile.frontend', '.']
+    args: ['build', '-t', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/rag-poc-images/frontend:${SHORT_SHA}', '-f', 'src/frontend/Dockerfile', '.']
 
   # Push images
   - name: 'gcr.io/cloud-builders/docker'
