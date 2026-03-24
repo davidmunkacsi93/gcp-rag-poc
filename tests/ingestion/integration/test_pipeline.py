@@ -97,6 +97,10 @@ def test_run_ingestion_calls_upsert_once_per_document(monkeypatch, base_config):
     assert len(docs_a) == 1
     assert len(docs_b) == 1
     assert len(store.upserted) > 0
+    for dp in store.upserted:
+        assert dp.get("datapoint_id")
+        assert len(dp.get("feature_vector", [])) == 768
+        assert dp.get("restricts")
 
 
 @pytest.mark.integration

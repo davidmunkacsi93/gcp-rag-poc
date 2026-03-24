@@ -12,18 +12,6 @@ provider "google" {
   region  = var.region
 }
 
-# ── Required APIs ─────────────────────────────────────────────────────────────
-
-resource "google_project_service" "aiplatform" {
-  service            = "aiplatform.googleapis.com"
-  disable_on_destroy = false
-}
-
-resource "google_project_service" "generativelanguage" {
-  service            = "generativelanguage.googleapis.com"
-  disable_on_destroy = false
-}
-
 # ── GCS bucket (Box substitute) ──────────────────────────────────────────────
 
 resource "google_storage_bucket" "documents" {

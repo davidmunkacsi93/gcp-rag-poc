@@ -13,4 +13,5 @@ faker==37.1.0
 # Testing
 pytest==8.3.5
 pytest-env==1.1.5
+pytest-retry==1.7.0
 python-dotenv==1.1.0

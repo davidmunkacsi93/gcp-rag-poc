@@ -31,7 +31,7 @@ Columns:
   profit_margin_pct NUMERIC, market_share_pct NUMERIC, risk_score NUMERIC
 """
 
-_SELECT_PATTERN = re.compile(r"^\s*SELECT\s", re.IGNORECASE)
+_SELECT_PATTERN = re.compile(r"^\s*(WITH|SELECT)\s", re.IGNORECASE)
 _DANGEROUS_PATTERN = re.compile(
     r"\b(INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|TRUNCATE)\b", re.IGNORECASE
 )
@@ -57,6 +57,10 @@ def _generate_sql(schema: str, nl_query: str) -> str:
     prompt = (
         "You are a SQL expert. Given the schema below, write a single SQL SELECT query "
         "to answer the question. Return only the SQL with no explanation and no markdown.\n\n"
+        "Rules:\n"
+        "- Never use aggregate functions (MAX, MIN, COUNT, SUM, AVG) directly in a WHERE clause. "
+        "Use a subquery or CTE instead.\n"
+        "- You may use CTEs (WITH clauses).\n\n"
         f"Schema:\n{schema}\n\nQuestion: {nl_query}\n\nSQL:"
     )
     sql = model.generate_content(prompt).text.strip()
