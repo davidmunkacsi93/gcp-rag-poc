@@ -475,3 +475,9 @@ resource "google_project_iam_member" "cloudbuild_run_developer" {
   member  = local.cloudbuild_sa
 }
 
+resource "google_project_iam_member" "cloudbuild_sa_user" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountUser"
+  member  = local.cloudbuild_sa
+}
+
