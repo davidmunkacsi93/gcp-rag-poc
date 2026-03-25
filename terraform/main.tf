@@ -1,3 +1,5 @@
+data "google_project" "project" {}
+
 terraform {
   required_providers {
     google = {
@@ -441,5 +443,13 @@ resource "google_cloud_run_v2_service_iam_member" "generation_invokes_retrieval"
   name     = google_cloud_run_v2_service.retrieval.name
   role     = "roles/run.invoker"
   member   = "serviceAccount:${google_service_account.generation.email}"
+}
+
+# Cloud Build uses the Compute Engine default SA — grant it Storage Admin
+# so it can read/write the _cloudbuild GCS bucket for build sources and artifacts.
+resource "google_project_iam_member" "cloudbuild_storage" {
+  project = var.project_id
+  role    = "roles/storage.admin"
+  member  = "serviceAccount:${data.google_project.project.number}-compute@developer.gserviceaccount.com"
 }
 
