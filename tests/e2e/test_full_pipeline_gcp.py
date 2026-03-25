@@ -46,6 +46,12 @@ def test_semantic_query_cites_ingested_test_documents(pipeline_data):
     semantic_items = [i for i in context.items if i.type == "semantic"]
     assert semantic_items, "No semantic context items — Vector Search may still be propagating"
 
+    zenith_items = [i for i in semantic_items if "zenith" in i.source_ref.lower()]
+    assert zenith_items, (
+        f"Zenith documents not in top-k context (retrieval issue, not citation issue). "
+        f"source_refs returned: {[i.source_ref for i in semantic_items]}"
+    )
+
     result = generate(_SEMANTIC_QUERY, context)
 
     assert any(c.type == "semantic" for c in result.citations)
@@ -53,6 +59,8 @@ def test_semantic_query_cites_ingested_test_documents(pipeline_data):
         "zenith" in c.source_key.lower()
         for c in result.citations
         if c.type == "semantic"
+    ), (
+        f"LLM did not cite zenith documents. citations: {[(c.source_key, c.type) for c in result.citations]}"
     )
 
 
