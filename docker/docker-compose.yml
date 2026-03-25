@@ -90,7 +90,7 @@ services:
       RETRIEVAL_SERVICE_URL: http://retrieval-service:8080
       FIRESTORE_EMULATOR_HOST: firestore:8090
       GCP_PROJECT_ID: ${GCP_PROJECT_ID:-gcp-rag-poc}
-      GENERATION_STUB: "true"
+      GENERATION_STUB: ${GENERATION_STUB:-true}
       EMBEDDING_MODEL: stub
     depends_on:
       retrieval-service:

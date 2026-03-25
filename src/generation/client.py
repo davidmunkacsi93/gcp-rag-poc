@@ -48,8 +48,11 @@ class VertexGenerationClient(BaseGenerationClient):
 
 class StubGenerationClient(BaseGenerationClient):
     def generate(self, prompt: str, config: GenerationConfig) -> RawGenerationResponse:
-        snippet = prompt[:80]
-        text = f"Based on the provided context, {snippet}... [Source: stub_source, stub_section]"
+        text = (
+            "Stub response — generation service is running in stub mode. "
+            "Set `GENERATION_STUB=false` to use Gemini. "
+            "[Source: stub_source, stub_section]"
+        )
         return RawGenerationResponse(
             text=text,
             prompt_tokens=len(prompt) // 4,
