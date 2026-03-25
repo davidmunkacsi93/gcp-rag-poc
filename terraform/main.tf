@@ -445,11 +445,33 @@ resource "google_cloud_run_v2_service_iam_member" "generation_invokes_retrieval"
   member   = "serviceAccount:${google_service_account.generation.email}"
 }
 
-# Cloud Build uses the Compute Engine default SA — grant it Storage Admin
-# so it can read/write the _cloudbuild GCS bucket for build sources and artifacts.
+# Cloud Build uses the Compute Engine default SA.
+# Grant the minimum roles needed to build, push images, and write logs.
+locals {
+  cloudbuild_sa = "serviceAccount:${data.google_project.project.number}-compute@developer.gserviceaccount.com"
+}
+
 resource "google_project_iam_member" "cloudbuild_storage" {
   project = var.project_id
   role    = "roles/storage.admin"
-  member  = "serviceAccount:${data.google_project.project.number}-compute@developer.gserviceaccount.com"
+  member  = local.cloudbuild_sa
+}
+
+resource "google_project_iam_member" "cloudbuild_artifact_registry" {
+  project = var.project_id
+  role    = "roles/artifactregistry.writer"
+  member  = local.cloudbuild_sa
+}
+
+resource "google_project_iam_member" "cloudbuild_log_writer" {
+  project = var.project_id
+  role    = "roles/logging.logWriter"
+  member  = local.cloudbuild_sa
+}
+
+resource "google_project_iam_member" "cloudbuild_run_developer" {
+  project = var.project_id
+  role    = "roles/run.developer"
+  member  = local.cloudbuild_sa
 }
 
