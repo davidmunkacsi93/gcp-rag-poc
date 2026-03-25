@@ -3,8 +3,22 @@ import uuid
 
 import httpx
 import streamlit as st
+from google.auth.transport.requests import Request
+from google.oauth2 import id_token
 
 GENERATION_SERVICE_URL = os.environ.get("GENERATION_SERVICE_URL", "http://localhost:8080")
+
+
+def _auth_headers(audience: str) -> dict:
+    """Return an Authorization header when calling a private Cloud Run service.
+    Falls back to no auth for local development (localhost audiences)."""
+    if "localhost" in audience or "127.0.0.1" in audience:
+        return {}
+    try:
+        token = id_token.fetch_id_token(Request(), audience)
+        return {"Authorization": f"Bearer {token}"}
+    except Exception:
+        return {}
 
 st.set_page_config(page_title="RAG Knowledge Assistant", layout="centered")
 
@@ -28,10 +42,12 @@ if st.button("Ask", type="primary", disabled=not bool(query)):
     correlation_id = str(uuid.uuid4())[:8]
     with st.spinner("Retrieving context and generating answer…"):
         try:
+            headers = _auth_headers(GENERATION_SERVICE_URL)
+            headers["X-Correlation-ID"] = correlation_id
             response = httpx.post(
                 f"{GENERATION_SERVICE_URL}/generate",
                 json={"query": query},
-                headers={"X-Correlation-ID": correlation_id},
+                headers=headers,
                 timeout=60.0,
             )
             response.raise_for_status()
