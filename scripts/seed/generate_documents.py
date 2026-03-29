@@ -72,14 +72,48 @@ through end of {year}. Capital expenditure budget is set at ${random.randint(5, 
     return filename, content
 
 
+_RISK_ASSESSMENTS = {
+    "Market Risk": [
+        "Volatile interest rate environment may compress net interest margins across EMEA portfolios.",
+        "FX exposure in APAC markets has increased following currency devaluation in key trading partners.",
+        "Equity market downturn risk elevated due to geopolitical tensions affecting AMER operations.",
+        "Spread widening in credit markets may reduce fair value of held-to-maturity bond portfolios.",
+    ],
+    "Credit Risk": [
+        "Counterparty concentration in top-10 clients exceeds internal limits; requires immediate review.",
+        "Non-performing loan ratio has risen above the 3% threshold in the retail segment.",
+        "Collateral valuations have not been refreshed in over 12 months for a subset of corporate loans.",
+        "Wholesale credit exposures to real estate sector represent 18% of total portfolio — above policy limit.",
+    ],
+    "Operational Risk": [
+        "Legacy core banking system lacks automated reconciliation, increasing manual error risk.",
+        "Third-party vendor for payment processing has no tested business continuity plan in place.",
+        "Staff turnover in operations has reached 22%, creating key-person dependency on critical processes.",
+        "Recent internal audit identified gaps in change management controls for technology deployments.",
+    ],
+    "Regulatory Risk": [
+        "Programme activities fall within scope of DORA; ICT risk management framework must be updated by Q2.",
+        "Pending MiFID II review may require re-papering of client agreements across 1,200 accounts.",
+        "Basel IV capital floors will increase RWA by an estimated 8–12% if implemented without mitigation.",
+        "Consumer Duty obligations require product fair value assessments to be completed before go-live.",
+    ],
+    "Reputational Risk": [
+        "Media coverage of programme delays could affect client confidence in the bank's digital transformation.",
+        "Data privacy incident in a related programme has heightened regulator scrutiny of this initiative.",
+        "External benchmarking indicates peer firms have achieved similar objectives at 30% lower cost.",
+        "ESG commitments linked to this programme have not been independently verified, creating disclosure risk.",
+    ],
+}
+
+
 def risk_assessment(project_name: str, region: str, year: int) -> tuple[str, str]:
     filename = f"risk_assessment_{project_name.lower().replace(' ', '_')}_{year}.md"
     risk_items = [
-        ("Market Risk", random.randint(1, 10), fake.sentence()),
-        ("Credit Risk", random.randint(1, 10), fake.sentence()),
-        ("Operational Risk", random.randint(1, 10), fake.sentence()),
-        ("Regulatory Risk", random.randint(1, 10), fake.sentence()),
-        ("Reputational Risk", random.randint(1, 10), fake.sentence()),
+        ("Market Risk", random.randint(1, 10), random.choice(_RISK_ASSESSMENTS["Market Risk"])),
+        ("Credit Risk", random.randint(1, 10), random.choice(_RISK_ASSESSMENTS["Credit Risk"])),
+        ("Operational Risk", random.randint(1, 10), random.choice(_RISK_ASSESSMENTS["Operational Risk"])),
+        ("Regulatory Risk", random.randint(1, 10), random.choice(_RISK_ASSESSMENTS["Regulatory Risk"])),
+        ("Reputational Risk", random.randint(1, 10), random.choice(_RISK_ASSESSMENTS["Reputational Risk"])),
     ]
     total_exposure = random.randint(10, 500)
 
@@ -127,7 +161,15 @@ def risk_assessment(project_name: str, region: str, year: int) -> tuple[str, str
 
 def remediation_guidance(product_line: str) -> tuple[str, str]:
     filename = f"remediation_guidance_{product_line.lower().replace(' ', '_')}.md"
-    steps = [fake.sentence() for _ in range(4)]
+    _remediation_steps = [
+        "Conduct a root-cause analysis to identify the primary driver of underperformance.",
+        "Submit a 30-day recovery plan to the Regional Performance Committee for approval.",
+        "Implement weekly KPI tracking and share results with Group Finance.",
+        "Engage frontline managers to identify operational blockers and escalate resource gaps.",
+        "Review pricing and product mix to identify margin recovery opportunities.",
+        "Freeze discretionary expenditure pending return to threshold performance.",
+    ]
+    steps = random.sample(_remediation_steps, 4)
 
     content = f"""# Remediation Guidance — {product_line}
 
@@ -176,6 +218,29 @@ to threshold.
 def regulatory_note(topic: str, year: int) -> tuple[str, str]:
     filename = f"regulatory_note_{topic.lower().replace(' ', '_')}_{year}.md"
 
+    _reg_requirements = {
+        "Consumer Duty": [
+            "Conduct and document a fair value assessment for all retail products before distribution.",
+            "Ensure customer support channels are accessible and capable of handling vulnerability disclosures.",
+            "Review all marketing materials for clarity, fairness, and absence of misleading claims.",
+        ],
+        "Basel IV Capital Requirements": [
+            "Recalculate risk-weighted assets using the revised standardised approach by the regulatory deadline.",
+            "Update internal capital adequacy assessment process (ICAAP) to reflect new output floor requirements.",
+            "Engage the CFO office to model capital impact scenarios under the new framework.",
+        ],
+        "DORA Operational Resilience": [
+            "Register all critical ICT third-party service providers in the group-wide vendor register.",
+            "Complete and test a digital operational resilience plan covering all in-scope entities.",
+            "Establish an ICT incident classification and reporting process aligned to DORA Article 18.",
+        ],
+    }
+    reqs = _reg_requirements.get(topic, [
+        "Review current operating procedures against the updated regulatory framework.",
+        "Submit a compliance gap analysis to Group Compliance within 30 days.",
+        "Appoint a named compliance owner for all in-scope activities.",
+    ])
+
     content = f"""# Regulatory Compliance Note — {topic}
 
 **Classification:** Internal — Legal & Compliance
@@ -193,13 +258,13 @@ confirm compliance by the stated effective date.
 This note applies to:
 - All client-facing {random.choice(PRODUCT_LINES)} operations
 - Entities regulated in {random.choice(REGIONS)}
-- Activities involving {fake.bs()}
+- Activities subject to {topic} obligations
 
 ## Key Requirements
 
-1. {fake.sentence()}
-2. {fake.sentence()}
-3. {fake.sentence()}
+1. {reqs[0]}
+2. {reqs[1]}
+3. {reqs[2]}
 4. Maintain audit trail for all in-scope transactions for a minimum of **7 years**
 
 ## Actions Required
