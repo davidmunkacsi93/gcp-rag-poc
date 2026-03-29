@@ -45,6 +45,10 @@ def _chunks_from_sentences(
 
         chunks.append(" ".join(accumulated))
 
+        # Only apply overlap when the chunk was full and sentences remain
+        if j >= len(sentences):
+            break
+
         overlap_tokens = 0
         backtrack = j - 1
         while backtrack > i and overlap_tokens < chunk_overlap:

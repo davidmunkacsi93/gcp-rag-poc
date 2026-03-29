@@ -75,7 +75,7 @@ The retrieval router classifies queries by keyword signal. Use these prompts to 
 
 **Semantic only** — triggers on document terms (`report`, `policy`, `risk`, `compliance`, etc.):
 ```
-What does the Q3 risk assessment report say about regulatory compliance?
+What does the Project Apollo risk assessment say about regulatory compliance?
 ```
 
 **Structured only** — triggers on metric terms (`revenue`, `margin`, `growth`, `kpi`, etc.):
@@ -85,7 +85,7 @@ What was the revenue growth and profit margin by region in Q3?
 
 **Both paths** — contains both document and metric terms, or is ambiguous (no signal defaults to both):
 ```
-What do the strategy memos say about forecast performance and budget exposure by quarter?
+What do the EMEA Corporate Banking strategy memos say about forecast performance and budget exposure?
 ```
 
 To call the retrieval service directly:
