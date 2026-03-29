@@ -294,16 +294,16 @@ Add the following to `requirements.txt`:
 
 ### Completion Criteria
 
-- [ ] Artifact Registry repository `rag-poc-images` provisioned via Terraform
-- [ ] Three Cloud Run services defined in Terraform with correct service accounts and IAM bindings
-- [ ] `rag-poc-frontend` service account provisioned with `roles/run.invoker` on the generation service
-- [ ] `rag-poc-generation` service account has `roles/run.invoker` on the retrieval service
-- [ ] Retrieval service starts locally and responds to `POST /retrieve` with valid `RetrieveResponse` JSON
-- [ ] Generation service starts locally and responds to `POST /generate` with valid `GenerateResponse` JSON
-- [ ] Streamlit frontend starts locally on port 8501 and renders the query interface
-- [ ] Frontend successfully calls generation service and displays answer with citations
-- [ ] All three Dockerfiles build without error (`docker build -f docker/Dockerfile.<service> .`)
-- [ ] `docker-compose up` starts all services and the frontend is accessible at `http://localhost:8501`
-- [ ] `cloudbuild.yaml` is valid and Cloud Build trigger is provisioned in Terraform
-- [ ] Cloud Run deployment smoke test passes (`pytest -m gcp tests/deployment/`)
-- [ ] Manual end-to-end verification of UC-01 and UC-02 through the Streamlit frontend completes successfully
+- [x] Artifact Registry repository `rag-poc-images` provisioned via Terraform
+- [x] Three Cloud Run services defined in Terraform with correct service accounts and IAM bindings
+- [x] `rag-poc-frontend` service account provisioned with `roles/run.invoker` on the generation service
+- [x] `rag-poc-generation` service account has `roles/run.invoker` on the retrieval service
+- [x] Retrieval service starts locally and responds to `POST /retrieve` with valid `RetrieveResponse` JSON
+- [x] Generation service starts locally and responds to `POST /generate` with valid `GenerateResponse` JSON
+- [x] Streamlit frontend starts locally on port 8501 and renders the query interface
+- [x] Frontend successfully calls generation service and displays answer with citations
+- [x] All three Dockerfiles build without error (`docker build -f docker/Dockerfile.<service> .`)
+- [x] `docker-compose up` starts all services and the frontend is accessible at `http://localhost:8501`
+- [x] `cloudbuild.yaml` is valid and Cloud Build trigger is provisioned in Terraform
+- [x] Cloud Run deployment smoke test passes (`pytest -m gcp tests/deployment/`)
+- [x] Manual end-to-end verification of UC-01 and UC-02 through the Streamlit frontend completes successfully
