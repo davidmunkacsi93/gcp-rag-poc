@@ -23,7 +23,7 @@ def load() -> int:
     _ensure_documents()
 
     project = os.environ["GCP_PROJECT_ID"]
-    bucket_name = os.environ["GCS_BUCKET"]
+    bucket_name = os.environ["GCS_DOCUMENTS_BUCKET"]
 
     client = storage.Client(project=project)
     bucket = client.bucket(bucket_name)
