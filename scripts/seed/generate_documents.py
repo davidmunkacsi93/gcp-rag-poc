@@ -349,9 +349,15 @@ def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     documents = []
 
-    # Strategy memos
+    # Strategy memos — regions pinned to avoid non-determinism from random seed drift
+    _MEMO_REGIONS = {
+        "Retail Banking": "AMER",
+        "Wealth Management": "AMER",
+        "Corporate Banking": "EMEA",
+        "Investment Banking": "EMEA",
+    }
     for pl in PRODUCT_LINES:
-        documents.append(strategy_memo(pl, random.choice(REGIONS), "Q3", 2024))
+        documents.append(strategy_memo(pl, _MEMO_REGIONS[pl], "Q3", 2024))
 
     # Risk assessments — including mandatory Project Apollo
     documents.append(risk_assessment("Project Apollo", "EMEA", 2024))
