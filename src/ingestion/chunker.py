@@ -4,6 +4,9 @@ from dataclasses import dataclass
 from src.ingestion.config import IngestionConfig
 from src.ingestion.parser import ParsedDocument
 
+_TABLE_ROW_RE = re.compile(r"^\|(.+)\|$")
+_TABLE_SEP_RE = re.compile(r"^\|[-| :]+\|$")
+
 
 @dataclass
 class Chunk:
@@ -20,6 +23,30 @@ def _approximate_tokens(text: str) -> int:
 def _split_sentences(text: str) -> list[str]:
     parts = re.split(r"(?<=[\.\!\?]) ", text)
     return [p.strip() for p in parts if p.strip()]
+
+
+def _is_table(text: str) -> bool:
+    lines = [l.strip() for l in text.strip().splitlines() if l.strip()]
+    return len(lines) >= 2 and all(_TABLE_ROW_RE.match(l) or _TABLE_SEP_RE.match(l) for l in lines)
+
+
+def _table_to_sentences(text: str) -> list[str]:
+    """Convert a markdown table to a list of natural-language sentences, one per data row."""
+    lines = [l.strip() for l in text.strip().splitlines() if l.strip()]
+    # First non-separator line is the header
+    headers = [h.strip() for h in lines[0].strip("|").split("|")]
+    sentences = []
+    for line in lines[1:]:
+        if _TABLE_SEP_RE.match(line):
+            continue
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        parts = []
+        for header, cell in zip(headers, cells):
+            if cell:
+                parts.append(f"{header}: {cell}")
+        if parts:
+            sentences.append(". ".join(parts) + ".")
+    return sentences
 
 
 def _chunks_from_sentences(
@@ -45,6 +72,10 @@ def _chunks_from_sentences(
 
         chunks.append(" ".join(accumulated))
 
+        # Only apply overlap when the chunk was full and sentences remain
+        if j >= len(sentences):
+            break
+
         overlap_tokens = 0
         backtrack = j - 1
         while backtrack > i and overlap_tokens < chunk_overlap:
@@ -62,6 +93,7 @@ def _chunks_from_sentences(
 def chunk_document(parsed_doc: ParsedDocument, config: IngestionConfig) -> list[Chunk]:
     chunks: list[Chunk] = []
     chunk_index = 0
+    prefix = f"[Document: {parsed_doc.title} | Type: {parsed_doc.doc_type} | Section: {{heading}}]"
 
     for section in parsed_doc.sections:
         body = section["body"]
@@ -70,11 +102,15 @@ def chunk_document(parsed_doc: ParsedDocument, config: IngestionConfig) -> list[
         if not body:
             continue
 
-        sentences = _split_sentences(body)
+        if _is_table(body):
+            sentences = _table_to_sentences(body)
+        else:
+            sentences = _split_sentences(body)
+
         raw_chunks = _chunks_from_sentences(sentences, config.chunk_size, config.chunk_overlap)
 
         for raw_chunk in raw_chunks:
-            text = f"[Section: {heading}]\n{raw_chunk}"
+            text = f"{prefix.format(heading=heading)}\n{raw_chunk}"
             chunks.append(
                 Chunk(
                     text=text,

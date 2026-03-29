@@ -69,6 +69,32 @@ source .env.gcp && python -m src.ingestion.pipeline
 source .env.gcp && pytest -m gcp -v
 ```
 
+## Test Prompts
+
+The retrieval router classifies queries by keyword signal. Use these prompts to exercise each path:
+
+**Semantic only** — triggers on document terms (`report`, `policy`, `risk`, `compliance`, etc.):
+```
+What does the Project Apollo risk assessment say about regulatory compliance?
+```
+
+**Structured only** — triggers on metric terms (`revenue`, `margin`, `growth`, `kpi`, etc.):
+```
+What was the revenue growth and profit margin by region in Q3?
+```
+
+**Both paths** — contains both document and metric terms, or is ambiguous (no signal defaults to both):
+```
+What do the EMEA Corporate Banking strategy memos say about forecast performance and budget exposure?
+```
+
+To call the retrieval service directly:
+```bash
+curl -s -X POST http://localhost:8080/retrieve \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What was the revenue growth and profit margin by region in Q3?"}' | jq .
+```
+
 ## Project Structure
 
 ```

@@ -1,0 +1,37 @@
+### Local service URLs
+@retrieval_url = http://localhost:8081
+@generation_url = http://localhost:8080
+
+# ── Retrieval service ─────────────────────────────────────────────────────────
+
+### Health
+GET {{retrieval_url}}/health
+
+### Retrieve
+POST {{retrieval_url}}/retrieve
+Content-Type: application/json
+
+{
+  "query": "What were the top underperforming product lines in EMEA last quarter?"
+}
+
+# ── Generation service ────────────────────────────────────────────────────────
+
+### Health
+GET {{generation_url}}/health
+
+### Generate — UC-01
+POST {{generation_url}}/generate
+Content-Type: application/json
+
+{
+  "query": "What were the top 3 underperforming product lines in EMEA last quarter, and is there any internal remediation guidance applicable to this region?"
+}
+
+### Generate — UC-02
+POST {{generation_url}}/generate
+Content-Type: application/json
+
+{
+  "query": "Run a preliminary due diligence summary for Project Apollo — include financial exposure, open risk items, and any regulatory considerations flagged in recent reports."
+}

@@ -1,0 +1,36 @@
+steps:
+  # Build images
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/rag-poc-images/retrieval-service:${SHORT_SHA}', '-f', 'src/retrieval/Dockerfile', '.']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/rag-poc-images/generation-service:${SHORT_SHA}', '-f', 'src/generation/Dockerfile', '.']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/rag-poc-images/frontend:${SHORT_SHA}', '-f', 'src/frontend/Dockerfile', '.']
+
+  # Push images
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/rag-poc-images/retrieval-service:${SHORT_SHA}']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/rag-poc-images/generation-service:${SHORT_SHA}']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/rag-poc-images/frontend:${SHORT_SHA}']
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args: ['run', 'deploy', 'retrieval-service', '--image', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/rag-poc-images/retrieval-service:${SHORT_SHA}', '--region', '${_REGION}', '--platform', 'managed', '--quiet']
+
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args: ['run', 'deploy', 'generation-service', '--image', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/rag-poc-images/generation-service:${SHORT_SHA}', '--region', '${_REGION}', '--platform', 'managed', '--quiet']
+
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args: ['run', 'deploy', 'frontend', '--image', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/rag-poc-images/frontend:${SHORT_SHA}', '--region', '${_REGION}', '--platform', 'managed', '--quiet']
+
+substitutions:
+  _REGION: europe-west1
+
+options:
+  logging: CLOUD_LOGGING_ONLY

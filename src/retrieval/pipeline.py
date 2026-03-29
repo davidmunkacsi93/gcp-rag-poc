@@ -33,6 +33,7 @@ def retrieve(query: str) -> FusedContext:
             query,
             vector_client=vector_client,
             embedder=embedder,
+            top_k=15,
             doc_type_filter=decision.doc_type_filter,
         )
 

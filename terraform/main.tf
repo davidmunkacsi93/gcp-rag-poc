@@ -1,3 +1,5 @@
+data "google_project" "project" {}
+
 terraform {
   required_providers {
     google = {
@@ -10,18 +12,6 @@ terraform {
 provider "google" {
   project = var.project_id
   region  = var.region
-}
-
-# ── Required APIs ─────────────────────────────────────────────────────────────
-
-resource "google_project_service" "aiplatform" {
-  service            = "aiplatform.googleapis.com"
-  disable_on_destroy = false
-}
-
-resource "google_project_service" "generativelanguage" {
-  service            = "generativelanguage.googleapis.com"
-  disable_on_destroy = false
 }
 
 # ── GCS bucket (Box substitute) ──────────────────────────────────────────────
@@ -85,6 +75,10 @@ resource "google_sql_database_instance" "regional" {
       authorized_networks {
         name  = "dev-machine"
         value = "31.46.241.123/32"
+      }
+      authorized_networks {
+        name  = "cloud-run"
+        value = "0.0.0.0/0"
       }
     }
   }
@@ -284,6 +278,342 @@ resource "google_project_iam_member" "generation_aiplatform" {
 
 resource "google_project_iam_member" "generation_firestore" {
   project = var.project_id
-  role    = "roles/datastore.viewer"
+  role    = "roles/datastore.user"
   member  = "serviceAccount:${google_service_account.generation.email}"
 }
+
+# Generation runs retrieval inline — needs the same BQ/SQL/Secret access as retrieval SA.
+resource "google_project_iam_member" "generation_bq_viewer" {
+  project = var.project_id
+  role    = "roles/bigquery.dataViewer"
+  member  = "serviceAccount:${google_service_account.generation.email}"
+}
+
+resource "google_project_iam_member" "generation_bq_job" {
+  project = var.project_id
+  role    = "roles/bigquery.jobUser"
+  member  = "serviceAccount:${google_service_account.generation.email}"
+}
+
+resource "google_project_iam_member" "generation_cloudsql" {
+  project = var.project_id
+  role    = "roles/cloudsql.client"
+  member  = "serviceAccount:${google_service_account.generation.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "generation_secret" {
+  secret_id = google_secret_manager_secret.db_password.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.generation.email}"
+}
+
+resource "google_artifact_registry_repository" "rag_poc_images" {
+  repository_id = "rag-poc-images"
+  location      = var.region
+  format        = "DOCKER"
+  description   = "Docker images for RAG POC services"
+
+  depends_on = [google_project_service.required]
+}
+
+# ── Service cloud run instances ────────────────────────────────────────────────
+
+resource "google_cloud_run_v2_service" "retrieval" {
+  name     = "retrieval-service"
+  location = var.region
+
+  template {
+    service_account = google_service_account.retrieval.email
+
+    scaling {
+      min_instance_count = 0
+      max_instance_count = 2
+    }
+
+    containers {
+      image = "us-docker.pkg.dev/cloudrun/container/hello"
+
+      resources {
+        limits = {
+          memory = "512Mi"
+          cpu    = "1"
+        }
+      }
+
+      ports {
+        container_port = 8080
+      }
+
+      env {
+        name  = "GCP_PROJECT_ID"
+        value = var.project_id
+      }
+      env {
+        name  = "VERTEX_AI_LOCATION"
+        value = var.region
+      }
+      env {
+        name  = "VERTEX_AI_INDEX_ENDPOINT"
+        value = google_vertex_ai_index_endpoint.rag_poc.id
+      }
+      env {
+        name  = "VERTEX_AI_DEPLOYED_INDEX_ID"
+        value = google_vertex_ai_index_endpoint_deployed_index.rag_poc.deployed_index_id
+      }
+      env {
+        name  = "EMBEDDING_MODEL"
+        value = "text-embedding-004"
+      }
+      env {
+        name  = "GEMINI_MODEL"
+        value = "gemini-2.5-flash"
+      }
+      env {
+        name  = "CLOUD_SQL_HOST"
+        value = google_sql_database_instance.regional.public_ip_address
+      }
+      env {
+        name  = "CLOUD_SQL_PORT"
+        value = "5432"
+      }
+      env {
+        name  = "CLOUD_SQL_USER"
+        value = "rag"
+      }
+      env {
+        name  = "CLOUD_SQL_DB"
+        value = "regional"
+      }
+      env {
+        name = "CLOUD_SQL_PASSWORD"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.db_password.secret_id
+            version = "latest"
+          }
+        }
+      }
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [template[0].containers[0].image]
+  }
+
+  depends_on = [
+    google_artifact_registry_repository.rag_poc_images,
+    google_project_service.required,
+  ]
+}
+
+resource "google_cloud_run_v2_service" "generation" {
+  name     = "generation-service"
+  location = var.region
+
+  template {
+    service_account = google_service_account.generation.email
+
+    scaling {
+      min_instance_count = 0
+      max_instance_count = 2
+    }
+
+    containers {
+      image = "us-docker.pkg.dev/cloudrun/container/hello"
+
+      resources {
+        limits = {
+          memory = "512Mi"
+          cpu    = "1"
+        }
+      }
+
+      ports {
+        container_port = 8080
+      }
+
+      env {
+        name  = "GCP_PROJECT_ID"
+        value = var.project_id
+      }
+      env {
+        name  = "VERTEX_AI_LOCATION"
+        value = var.region
+      }
+      env {
+        name  = "VERTEX_AI_INDEX_ENDPOINT"
+        value = google_vertex_ai_index_endpoint.rag_poc.id
+      }
+      env {
+        name  = "VERTEX_AI_DEPLOYED_INDEX_ID"
+        value = google_vertex_ai_index_endpoint_deployed_index.rag_poc.deployed_index_id
+      }
+      env {
+        name  = "EMBEDDING_MODEL"
+        value = "text-embedding-004"
+      }
+      env {
+        name  = "CLOUD_SQL_HOST"
+        value = google_sql_database_instance.regional.public_ip_address
+      }
+      env {
+        name  = "CLOUD_SQL_PORT"
+        value = "5432"
+      }
+      env {
+        name  = "CLOUD_SQL_USER"
+        value = "rag"
+      }
+      env {
+        name  = "CLOUD_SQL_DB"
+        value = "regional"
+      }
+      env {
+        name  = "GENERATION_STUB"
+        value = "false"
+      }
+      env {
+        name  = "GENERATION_MODEL"
+        value = "gemini-2.5-flash"
+      }
+      env {
+        name  = "GEMINI_MODEL"
+        value = "gemini-2.5-flash"
+      }
+      env {
+        name  = "RETRIEVAL_SERVICE_URL"
+        value = google_cloud_run_v2_service.retrieval.uri
+      }
+      env {
+        name = "CLOUD_SQL_PASSWORD"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.db_password.secret_id
+            version = "latest"
+          }
+        }
+      }
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [template[0].containers[0].image]
+  }
+
+  depends_on = [
+    google_artifact_registry_repository.rag_poc_images,
+    google_project_service.required,
+  ]
+}
+
+resource "google_service_account" "frontend" {
+  account_id   = "rag-poc-frontend"
+  display_name = "RAG POC Frontend Service Account"
+}
+
+resource "google_cloud_run_v2_service" "frontend" {
+  name     = "frontend"
+  location = var.region
+
+  template {
+    service_account = google_service_account.frontend.email
+
+    scaling {
+      min_instance_count = 0
+      max_instance_count = 1
+    }
+
+    containers {
+      image = "us-docker.pkg.dev/cloudrun/container/hello"
+
+      resources {
+        limits = {
+          memory = "512Mi"
+          cpu    = "1"
+        }
+      }
+
+      ports {
+        container_port = 8501
+      }
+
+      env {
+        name  = "GENERATION_SERVICE_URL"
+        value = google_cloud_run_v2_service.generation.uri
+      }
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [template[0].containers[0].image]
+  }
+
+  depends_on = [
+    google_artifact_registry_repository.rag_poc_images,
+    google_project_service.required,
+  ]
+}
+
+# Make the frontend publicly accessible
+resource "google_cloud_run_v2_service_iam_member" "frontend_public" {
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.frontend.name
+  role     = "roles/run.invoker"
+  member   = "allUsers"
+}
+
+# IAM bindings for service-to-service invocation
+
+resource "google_cloud_run_v2_service_iam_member" "frontend_invokes_generation" {
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.generation.name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${google_service_account.frontend.email}"
+}
+
+resource "google_cloud_run_v2_service_iam_member" "generation_invokes_retrieval" {
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.retrieval.name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${google_service_account.generation.email}"
+}
+
+# Cloud Build uses the Compute Engine default SA.
+# Grant the minimum roles needed to build, push images, and write logs.
+locals {
+  cloudbuild_sa = "serviceAccount:${data.google_project.project.number}-compute@developer.gserviceaccount.com"
+}
+
+resource "google_project_iam_member" "cloudbuild_storage" {
+  project = var.project_id
+  role    = "roles/storage.admin"
+  member  = local.cloudbuild_sa
+}
+
+resource "google_project_iam_member" "cloudbuild_artifact_registry" {
+  project = var.project_id
+  role    = "roles/artifactregistry.writer"
+  member  = local.cloudbuild_sa
+}
+
+resource "google_project_iam_member" "cloudbuild_log_writer" {
+  project = var.project_id
+  role    = "roles/logging.logWriter"
+  member  = local.cloudbuild_sa
+}
+
+resource "google_project_iam_member" "cloudbuild_run_developer" {
+  project = var.project_id
+  role    = "roles/run.developer"
+  member  = local.cloudbuild_sa
+}
+
+resource "google_project_iam_member" "cloudbuild_sa_user" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountUser"
+  member  = local.cloudbuild_sa
+}
+

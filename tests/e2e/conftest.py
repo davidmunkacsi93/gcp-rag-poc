@@ -17,6 +17,7 @@ from unittest.mock import patch
 import pytest
 from dotenv import dotenv_values
 from google.cloud import aiplatform, firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 from src.ingestion.config import IngestionConfig
 from src.ingestion.pipeline import run_ingestion
@@ -93,6 +94,47 @@ def gcp_env():
             os.environ[k] = orig
 
 
+def _purge_test_docs(db: firestore.Client, source_keys: list[str]) -> None:
+    """
+    Remove any leftover Firestore records and Vector Search datapoints for the
+    given source keys. Called before each test run to ensure a clean slate even
+    when a previous teardown failed partway through.
+    """
+    stale_vector_ids: list[str] = []
+
+    for source_key in source_keys:
+        doc_refs = list(
+            db.collection("documents")
+            .where(filter=FieldFilter("source_key", "==", source_key))
+            .stream()
+        )
+        for doc_ref in doc_refs:
+            doc_id = doc_ref.id
+            chunk_refs = list(
+                db.collection("chunks")
+                .where(filter=FieldFilter("doc_id", "==", doc_id))
+                .stream()
+            )
+            for chunk_ref in chunk_refs:
+                vector_id = chunk_ref.to_dict().get("chunk_id")
+                if vector_id:
+                    stale_vector_ids.append(vector_id)
+                chunk_ref.reference.delete()
+            doc_ref.reference.delete()
+
+    if stale_vector_ids:
+        try:
+            aiplatform.init(
+                project=os.environ["GCP_PROJECT_ID"],
+                location=os.environ["VERTEX_AI_LOCATION"],
+            )
+            index = aiplatform.MatchingEngineIndex(index_name=os.environ["VERTEX_AI_INDEX_ID"])
+            index.remove_datapoints(datapoint_ids=stale_vector_ids)
+            print(f"[setup] Pre-cleaned {len(stale_vector_ids)} stale VS datapoints for {source_keys}")
+        except Exception as exc:
+            print(f"[setup] WARNING: failed to pre-clean stale VS datapoints: {exc}")
+
+
 @pytest.fixture(scope="package")
 def pipeline_data(gcp_env):
     """
@@ -101,6 +143,8 @@ def pipeline_data(gcp_env):
     created during this run.
     """
     db = firestore.Client()
+
+    _purge_test_docs(db, list(_TEST_DOCS.keys()))
 
     existing_doc_ids = {doc.id for doc in db.collection("documents").stream()}
     existing_chunk_ids = {doc.id for doc in db.collection("chunks").stream()}
@@ -137,15 +181,21 @@ def pipeline_data(gcp_env):
     }
 
     if new_chunk_vector_ids:
-        aiplatform.init(
-            project=os.environ["GCP_PROJECT_ID"],
-            location=os.environ["VERTEX_AI_LOCATION"],
-        )
-        index = aiplatform.MatchingEngineIndex(index_name=os.environ["VERTEX_AI_INDEX_ID"])
-        index.remove_datapoints(datapoint_ids=new_chunk_vector_ids)
+        try:
+            aiplatform.init(
+                project=os.environ["GCP_PROJECT_ID"],
+                location=os.environ["VERTEX_AI_LOCATION"],
+            )
+            index = aiplatform.MatchingEngineIndex(index_name=os.environ["VERTEX_AI_INDEX_ID"])
+            index.remove_datapoints(datapoint_ids=new_chunk_vector_ids)
+        except Exception as exc:
+            print(f"[teardown] WARNING: failed to remove Vector Search datapoints: {exc}")
 
-    db2 = firestore.Client()
-    for doc_id in new_doc_ids:
-        db2.collection("documents").document(doc_id).delete()
-    for chunk_firestore_id in new_chunk_firestore_ids:
-        db2.collection("chunks").document(chunk_firestore_id).delete()
+    try:
+        db2 = firestore.Client()
+        for doc_id in new_doc_ids:
+            db2.collection("documents").document(doc_id).delete()
+        for chunk_firestore_id in new_chunk_firestore_ids:
+            db2.collection("chunks").document(chunk_firestore_id).delete()
+    except Exception as exc:
+        print(f"[teardown] WARNING: failed to clean up Firestore records: {exc}")
