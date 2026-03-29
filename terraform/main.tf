@@ -278,6 +278,31 @@ resource "google_project_iam_member" "generation_firestore" {
   member  = "serviceAccount:${google_service_account.generation.email}"
 }
 
+# Generation runs retrieval inline — needs the same BQ/SQL/Secret access as retrieval SA.
+resource "google_project_iam_member" "generation_bq_viewer" {
+  project = var.project_id
+  role    = "roles/bigquery.dataViewer"
+  member  = "serviceAccount:${google_service_account.generation.email}"
+}
+
+resource "google_project_iam_member" "generation_bq_job" {
+  project = var.project_id
+  role    = "roles/bigquery.jobUser"
+  member  = "serviceAccount:${google_service_account.generation.email}"
+}
+
+resource "google_project_iam_member" "generation_cloudsql" {
+  project = var.project_id
+  role    = "roles/cloudsql.client"
+  member  = "serviceAccount:${google_service_account.generation.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "generation_secret" {
+  secret_id = google_secret_manager_secret.db_password.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.generation.email}"
+}
+
 resource "google_artifact_registry_repository" "rag_poc_images" {
   repository_id = "rag-poc-images"
   location      = var.region
@@ -313,6 +338,52 @@ resource "google_cloud_run_v2_service" "retrieval" {
 
       ports {
         container_port = 8080
+      }
+
+      env {
+        name  = "GCP_PROJECT_ID"
+        value = var.project_id
+      }
+      env {
+        name  = "VERTEX_AI_LOCATION"
+        value = var.region
+      }
+      env {
+        name  = "VERTEX_AI_INDEX_ENDPOINT"
+        value = google_vertex_ai_index_endpoint.rag_poc.id
+      }
+      env {
+        name  = "VERTEX_AI_DEPLOYED_INDEX_ID"
+        value = google_vertex_ai_index_endpoint_deployed_index.rag_poc.deployed_index_id
+      }
+      env {
+        name  = "EMBEDDING_MODEL"
+        value = "text-embedding-004"
+      }
+      env {
+        name  = "CLOUD_SQL_HOST"
+        value = google_sql_database_instance.regional.public_ip_address
+      }
+      env {
+        name  = "CLOUD_SQL_PORT"
+        value = "5432"
+      }
+      env {
+        name  = "CLOUD_SQL_USER"
+        value = "rag"
+      }
+      env {
+        name  = "CLOUD_SQL_DB"
+        value = "regional"
+      }
+      env {
+        name = "CLOUD_SQL_PASSWORD"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.db_password.secret_id
+            version = "latest"
+          }
+        }
       }
     }
   }
@@ -354,8 +425,61 @@ resource "google_cloud_run_v2_service" "generation" {
       }
 
       env {
+        name  = "GCP_PROJECT_ID"
+        value = var.project_id
+      }
+      env {
+        name  = "VERTEX_AI_LOCATION"
+        value = var.region
+      }
+      env {
+        name  = "VERTEX_AI_INDEX_ENDPOINT"
+        value = google_vertex_ai_index_endpoint.rag_poc.id
+      }
+      env {
+        name  = "VERTEX_AI_DEPLOYED_INDEX_ID"
+        value = google_vertex_ai_index_endpoint_deployed_index.rag_poc.deployed_index_id
+      }
+      env {
+        name  = "EMBEDDING_MODEL"
+        value = "text-embedding-004"
+      }
+      env {
+        name  = "CLOUD_SQL_HOST"
+        value = google_sql_database_instance.regional.public_ip_address
+      }
+      env {
+        name  = "CLOUD_SQL_PORT"
+        value = "5432"
+      }
+      env {
+        name  = "CLOUD_SQL_USER"
+        value = "rag"
+      }
+      env {
+        name  = "CLOUD_SQL_DB"
+        value = "regional"
+      }
+      env {
+        name  = "GENERATION_STUB"
+        value = "false"
+      }
+      env {
+        name  = "GENERATION_MODEL"
+        value = "gemini-2.5-flash"
+      }
+      env {
         name  = "RETRIEVAL_SERVICE_URL"
         value = google_cloud_run_v2_service.retrieval.uri
+      }
+      env {
+        name = "CLOUD_SQL_PASSWORD"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.db_password.secret_id
+            version = "latest"
+          }
+        }
       }
     }
   }
