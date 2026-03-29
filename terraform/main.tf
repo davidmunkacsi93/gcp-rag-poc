@@ -361,6 +361,10 @@ resource "google_cloud_run_v2_service" "retrieval" {
         value = "text-embedding-004"
       }
       env {
+        name  = "GEMINI_MODEL"
+        value = "gemini-2.5-flash"
+      }
+      env {
         name  = "CLOUD_SQL_HOST"
         value = google_sql_database_instance.regional.public_ip_address
       }

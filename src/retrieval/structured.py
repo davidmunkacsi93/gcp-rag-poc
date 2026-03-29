@@ -53,7 +53,7 @@ def _generate_sql(schema: str, nl_query: str) -> str:
         project=os.environ["GCP_PROJECT_ID"],
         location=os.environ.get("GEMINI_LOCATION", os.environ.get("VERTEX_AI_LOCATION", "europe-west1")),
     )
-    model = GenerativeModel(os.environ.get("GEMINI_MODEL", "gemini-2.0-flash"))
+    model = GenerativeModel(os.environ.get("GEMINI_MODEL", "gemini-2.5-flash"))
     prompt = (
         "You are a SQL expert. Given the schema below, write a single SQL SELECT query "
         "to answer the question. Return only the SQL with no explanation and no markdown.\n\n"
