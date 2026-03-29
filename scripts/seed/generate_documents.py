@@ -30,10 +30,60 @@ PRODUCT_LINES = [
 REGIONS = ["EMEA", "APAC", "AMER"]
 
 
+_STRATEGY_INITIATIVES = {
+    "Retail Banking": [
+        "Expand digital self-service channels to reduce branch operating costs by 15% over two quarters.",
+        "Relaunch the personal lending product suite with revised pricing to improve margin by 200bps.",
+        "Introduce a new customer retention programme targeting high-value current account holders.",
+    ],
+    "Wealth Management": [
+        "Accelerate onboarding of ultra-high-net-worth clients in key EMEA markets.",
+        "Launch a discretionary portfolio management service targeting clients with AUM above $2M.",
+        "Expand ESG product offering in response to growing client demand for sustainable investment options.",
+    ],
+    "Corporate Banking": [
+        "Grow trade finance revenues by deepening relationships with mid-market exporters across EMEA.",
+        "Renegotiate credit facilities for top-20 corporate clients to improve risk-adjusted returns.",
+        "Pilot a cash management platform upgrade to reduce client attrition in the SME segment.",
+    ],
+    "Investment Banking": [
+        "Increase advisory revenue by targeting M&A mandates in the technology and healthcare sectors.",
+        "Strengthen ECM pipeline by building origination capacity in APAC growth markets.",
+        "Reduce operational costs in the secondary trading desk through process automation.",
+    ],
+}
+
+_STRATEGY_RISKS = {
+    "Retail Banking": [
+        ("Rising interest rates compressing net interest margin", "NIM sensitivity analysis updated monthly; rate hedging strategy under review."),
+        ("Customer attrition to digital-only competitors", "Retention programme approved; digital product roadmap accelerated."),
+    ],
+    "Wealth Management": [
+        ("Market volatility reducing AUM and fee income", "Scenario analysis completed; client communication plan prepared for drawdown events."),
+        ("Regulatory scrutiny of suitability assessments", "Training programme rolled out; compliance review scheduled for Q4."),
+    ],
+    "Corporate Banking": [
+        ("Credit deterioration in SME lending book", "Watchlist expanded; provisioning levels reviewed with CFO."),
+        ("Concentration risk in top-10 client exposures", "Portfolio rebalancing plan submitted to Credit Committee."),
+    ],
+    "Investment Banking": [
+        ("Pipeline conversion rate below forecast due to macro uncertainty", "Deal team capacity redeployed to advisory mandates with shorter timelines."),
+        ("Counterparty credit exposure in structured products", "Collateral management framework updated; stress tests completed."),
+    ],
+}
+
+
 def strategy_memo(product_line: str, region: str, quarter: str, year: int) -> tuple[str, str]:
     filename = f"strategy_memo_{product_line.lower().replace(' ', '_')}_{region.lower()}_{year}_{quarter.lower()}.md"
-    initiatives = [fake.bs().capitalize() for _ in range(3)]
-    risks = [fake.catch_phrase() for _ in range(2)]
+    initiatives = _STRATEGY_INITIATIVES.get(product_line, ["Improve operational efficiency.", "Grow client base.", "Reduce cost base."])
+    risks = _STRATEGY_RISKS.get(product_line, [("Execution risk", "Escalated to Programme Management Office."), ("Market risk", "Under review.")])
+    capex = random.randint(5, 50)
+    headcount_change = f"increase by {random.randint(2, 15)}%" if random.random() > 0.5 else "remain flat"
+    market_trend = "improvement" if random.random() > 0.4 else "deterioration"
+    pressure_area = "revenue growth" if random.random() > 0.5 else "cost efficiency"
+    forecast_variance = random.randint(-8, 12)
+    forecast_direction = "ahead of" if forecast_variance >= 0 else "behind"
+    forecast_abs = abs(forecast_variance)
 
     content = f"""# Strategic Memo — {product_line} {region} {quarter} {year}
 
@@ -44,8 +94,9 @@ def strategy_memo(product_line: str, region: str, quarter: str, year: int) -> tu
 ## Executive Summary
 
 This memo outlines the strategic priorities for {product_line} in {region} for {quarter} {year}.
-Market conditions in {region} have shown {"improvement" if random.random() > 0.4 else "deterioration"} relative to
-the prior quarter, with particular pressure on {"revenue growth" if random.random() > 0.5 else "cost efficiency"}.
+Market conditions in {region} have shown {market_trend} relative to the prior quarter, with particular
+pressure on {pressure_area}. {quarter} performance is {forecast_abs}% {forecast_direction} the annual forecast,
+{"which provides headroom to reinvest in growth initiatives." if forecast_variance >= 0 else "requiring immediate remediation action to close the gap."}
 
 ## Strategic Priorities
 
@@ -53,18 +104,28 @@ the prior quarter, with particular pressure on {"revenue growth" if random.rando
 
 ## Key Risks
 
-{"".join(f"- **{risk}**: Mitigation plan under review by the Risk Committee.\n" for risk in risks)}
+{"".join(f"- **{risk}**: {mitigation}\n" for risk, mitigation in risks)}
 
 ## Resource Allocation
 
-Headcount is expected to {"increase by {n}%" .format(n=random.randint(2, 15)) if random.random() > 0.5 else "remain flat"}
-through end of {year}. Capital expenditure budget is set at ${random.randint(5, 50)}M for this period.
+Headcount is expected to {headcount_change} through end of {year}.
+Capital expenditure budget is set at ${capex}M for this period, of which ${round(capex * 0.6)}M is allocated
+to technology investment and ${round(capex * 0.4)}M to business development. Total budget exposure
+for the quarter is ${capex + random.randint(2, 10)}M including carry-over commitments from prior periods.
+
+## Forecast Performance
+
+Revenue performance against the {quarter} plan is {forecast_abs}% {forecast_direction} forecast.
+{"Cost efficiency measures have partially offset revenue pressure, keeping EBITDA within acceptable variance." if market_trend == "deterioration" else "Revenue outperformance has been driven by stronger-than-expected client activity volumes."}
+The outlook for the remainder of {year} is {"cautiously optimistic" if forecast_variance >= 0 else "under active review"}, subject to
+macroeconomic conditions in {region}.
 
 ## Recommended Actions
 
 - Accelerate digital channel adoption across {region} markets
 - Review pricing strategy for {product_line} flagship products
 - Strengthen risk governance framework in line with regulatory expectations
+- {"Reinvest outperformance into accelerated hiring and product development." if forecast_variance >= 0 else "Submit a formal recovery plan to the Group Performance Committee within 30 days."}
 
 ---
 *This document is intended for internal distribution only.*
