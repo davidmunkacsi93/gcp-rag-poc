@@ -76,6 +76,10 @@ resource "google_sql_database_instance" "regional" {
         name  = "dev-machine"
         value = "31.46.241.123/32"
       }
+      authorized_networks {
+        name  = "cloud-run"
+        value = "0.0.0.0/0"
+      }
     }
   }
 
@@ -470,6 +474,10 @@ resource "google_cloud_run_v2_service" "generation" {
       }
       env {
         name  = "GENERATION_MODEL"
+        value = "gemini-2.5-flash"
+      }
+      env {
+        name  = "GEMINI_MODEL"
         value = "gemini-2.5-flash"
       }
       env {
